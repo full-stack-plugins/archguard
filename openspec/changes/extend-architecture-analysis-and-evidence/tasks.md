@@ -47,7 +47,7 @@
 - [ ] 2.2 在 `src/analysis/java.rs` 选择并固定 Java 字节码/ArchUnit 适配配置，发布真实支持矩阵（Requirement: Versioned Language Fact Providers）；`fixtures/languages/java/` + `tests/language_matrix.rs` 验证合法/禁止类型依赖与反射盲区，缺字节码/不支持版本明确缺覆盖，不声称运行时完整性。
 - [ ] 2.3 在 `src/analysis/typescript.rs` 选择并固定 TypeScript 语义提取，明确 alias/project-reference 配置（Requirement: Versioned Language Fact Providers）；`fixtures/languages/typescript/` + `tests/language_matrix.rs` 验证别名、跨包类型与动态导入，禁止边有来源，无法解析范围不变成零边成功。
 - [ ] 2.4 在 `src/analysis/rust_symbols.rs` 选择并固定 Rust 索引接口与 cfg/feature/target profile（Requirement: Versioned Language Fact Providers）；`fixtures/languages/rust/` + `tests/language_matrix.rs` 覆盖模块/类型/方法、宏和动态分派，支持关系正确归因，缺失配置/索引明确拒绝完整声明。
-- [ ] 2.5 在 `src/domain/rules.rs` 实现受保护分层、禁止方向与依赖环检查和中立投影边界（Requirement: Deterministic System Architecture Rules）；`tests/system_rules.rs` 为每条 enforce 提供合法、违规、缺覆盖案例，环结果列出实际路径/来源，不能表达于旧 engine 的规则明确协商能力或 unsupported。
+- [x] 2.5 在 `src/domain/rules.rs` 实现受保护分层、禁止方向与依赖环检查和中立投影边界（Requirement: Deterministic System Architecture Rules）；`tests/system_rules.rs` 为每条 enforce 提供合法、违规、缺覆盖案例，环结果列出实际路径/来源，不能表达于旧 engine 的规则明确协商能力或 unsupported。
 
 ## 3. Domain Contracts, Baseline and Design Diff — trace 阶段才依赖 SG-BASELINE
 

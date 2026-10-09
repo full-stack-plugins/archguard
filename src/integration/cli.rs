@@ -187,10 +187,10 @@ impl ProtectedInputs {
         }
         // Cargo can observe an enclosing workspace when a member was selected.
         for ancestor in root.ancestors().skip(1) {
-            if let Some(parsed) = self.discover_manifest(&ancestor.join("Cargo.toml"), 0)? {
-                if parsed.get("workspace").is_some() {
-                    break;
-                }
+            if let Some(parsed) = self.discover_manifest(&ancestor.join("Cargo.toml"), 0)?
+                && parsed.get("workspace").is_some()
+            {
+                break;
             }
         }
         Ok(())

@@ -35,6 +35,13 @@ impl CargoEvidence {
         }
         let analysis = PreparedAnalysis::prepare(root, &policy.profile)
             .map_err(|_| diagnostic("source.unresolved", "Cargo source preparation failed"))?;
+        Self::from_analysis(analysis, policy, context)
+    }
+    pub(crate) fn from_analysis(
+        analysis: PreparedAnalysis,
+        policy: ProtectedCargoPolicy,
+        context: CandidateContext,
+    ) -> Result<Self, TransportDiagnostic> {
         let binding = RunBinding {
             repo_id: context.repo_id,
             task_id: context.task_id,

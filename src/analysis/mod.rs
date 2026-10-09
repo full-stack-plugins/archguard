@@ -33,12 +33,22 @@ impl PreparedAnalysis {
     pub fn snapshot_digest(&self) -> String {
         self.inventory.digest()
     }
+    pub(crate) fn files_digest(&self) -> String {
+        self.inventory.files_digest()
+    }
     pub fn inventory_keys(&self) -> Vec<String> {
         self.inventory.keys().map(str::to_owned).collect()
     }
     pub fn prepare(
         root: &Path,
         profile: &profile::FrozenAnalysisProfile,
+    ) -> Result<Self, GuardError> {
+        Self::prepare_bound(root, profile, vec![])
+    }
+    pub(crate) fn prepare_bound(
+        root: &Path,
+        profile: &profile::FrozenAnalysisProfile,
+        binding_identity: Vec<(String, Vec<u8>)>,
     ) -> Result<Self, GuardError> {
         let root = root
             .canonicalize()
@@ -50,6 +60,7 @@ impl PreparedAnalysis {
             runner::Toolchain::discover(&budget).map_err(|e| GuardError::Input(e.to_string()))?;
         let environment = tools.environment(&isolated.tool_home());
         let mut identity = vec![("profile".into(), profile.identity_bytes())];
+        identity.extend(binding_identity);
         // Declared ambient configuration is bound even when sanitized away. This is
         // conservative invalidation, not a promise to honor active feature builds.
         for (key, value) in std::env::vars_os() {

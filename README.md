@@ -5,15 +5,16 @@
 ArchGuard is the architecture-focused specialist Guard in the [Guard ecosystem](https://github.com/full-stack-plugins).
 Its **v0.1 proof of concept** extracts real Rust Cargo workspace relationships and evaluates an independent GuardEngine contract.
 
-Inspected source baseline: `566fda92c7186a38e53ac81347ba23e0a8107443` (2026-10-09). Current crate version: `0.1.0`; roadmap sections describe proposed capabilities, not released interfaces.
+Current local implementation (crate `0.1.0`): bounded Cargo declarations and strict GE evidence, deterministic system rules over supplied LanguageObservation, and an opt-in GitGuard candidate source bridge. The Git bridge reads actual immutable candidate blobs into private analysis; it does not authenticate a producer, controller or queue. Native CLI/schema remain compatible. See [implementation status](docs/implementation-progress.md), [system rules](docs/decisions/0003-local-system-rules.md) and [Git source boundary](docs/decisions/0004-git-candidate-source.md). Real language providers, authenticated baselines, trust services, admission and published packages remain unimplemented.
 
 ## Prerequisites
 
-Rust 1.85+, Cargo, sibling `../guardengine` checkout (temporary local path dependency). Both repositories are independent; a versioned GuardEngine artifact will replace the path for public releases.
+Rust 1.90+, Cargo, and sibling `../guardengine` and `../gitguard` checkouts (temporary local path dependencies). The actual GitGuard dependency requires Rust 1.90. Repositories remain independent; fixed published artifacts are a separate release task.
 
 ```text
 workspace-full-stack-plugins/
 ├── guardengine/
+├── gitguard/
 └── archguard/
 ```
 
@@ -89,7 +90,7 @@ Read the expanded [architecture and ADRs](docs/architecture.md) and the [technic
 
 ## Integration and next steps
 
-SpecGuard, ArchGuard, CodeGuard, TestGuard, GitGuard and FlowGuard are independent domain guards using GuardEngine; there is no GuardCore. Engine owns generic contracts, neutral rule evaluation and deterministic evidence, while ArchGuard owns extraction and architecture meaning. Cross-guard orchestration, MCP, approvals, Design Diff and merge-queue candidate binding are targets. The draft [integration contract](docs/integration-contract.md) is separate from the frozen current protocol and is not accepted as current engine input. External CodeGraph/codegraph-plugin and codereview-plugin integrations are unverified compatibility targets, not inspected installed components.
+SpecGuard, ArchGuard, CodeGuard, TestGuard, GitGuard and FlowGuard are independent domain guards using GuardEngine; there is no GuardCore. Engine owns generic contracts, neutral rule evaluation and deterministic evidence, while ArchGuard owns extraction and architecture meaning. Cross-guard orchestration, MCP, approvals and Design Diff remain targets. The opt-in local Git bridge binds actual candidate/base/group/member objects, without queue authority. The [integration contract](docs/integration-contract.md) is implemented as a separate strict envelope; native GuardFacts/GuardReport schemas remain unchanged. External CodeGraph/codegraph-plugin and codereview-plugin integrations are unverified compatibility targets, not inspected installed components.
 
 ## Test
 

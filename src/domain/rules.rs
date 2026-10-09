@@ -332,10 +332,9 @@ impl ProtectedSystemPolicy {
                         if let (Some(a), Some(b)) = (
                             levels.get(&ModuleKey::of(&edge.from)?),
                             levels.get(&ModuleKey::of(&edge.to)?),
-                        ) {
-                            if a < b {
-                                append(rule, &[edge])?;
-                            }
+                        ) && a < b
+                        {
+                            append(rule, &[edge])?;
                         }
                     }
                 }

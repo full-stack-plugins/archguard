@@ -1,6 +1,6 @@
 # ArchGuard — 架构设计
 
-> 文档版本：0.2.0（目标架构）。当前软件：0.1.0 Cargo 依赖原型。日期：2026-10-09。项目名统一为 **ArchGuard**。
+> 文档版本：0.2.0（目标架构）。当前软件：0.1.0，受限实现包括 Cargo 声明 evidence、本地模型系统规则和实际不可变 Git 候选源码桥接；具体验收与限制见 implementation-progress.md 和 decisions/。真实语言 provider 与生产 trust 未完成。日期：2026-10-09。项目名统一为 **ArchGuard**。
 
 ## 1. 定位与原则
 

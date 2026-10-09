@@ -4,11 +4,11 @@
 
 ArchGuard 是 Guard 生态的专业**架构守卫**。当前 V0.1 原型从真实 Rust Cargo 工作区提取包依赖事实，再交给独立的 GuardEngine 执行约束规则。
 
-审阅源码基线：`566fda92c7186a38e53ac81347ba23e0a8107443`（2026-10-09）。当前 crate 版本 `0.1.0`；路线图说明目标能力，不代表已发布接口。
+当前本地实现（crate `0.1.0`）包括有界 Cargo 声明分析、严格 GE evidence、基于输入 LanguageObservation 的确定性系统规则，以及可选 GitGuard 实际候选源码桥接。桥接从不可变候选 blob 构造私有分析副本，不认证 producer、控制器或队列。原生 CLI/schema 保持兼容。详见[进度](docs/implementation-progress.md)、[系统规则](docs/decisions/0003-local-system-rules.md)和[Git 源码边界](docs/decisions/0004-git-candidate-source.md)。真实语言 provider、受信基线/身份服务、合入授权和独立发行尚未完成。
 
 ## 工程准备
 
-要求 Rust 1.85+ 和 Cargo；将 `guardengine`、`archguard` 两个独立仓库放在同级目录。当前使用临时 `path = "../guardengine"` 依赖，正式发布应使用固定版本的公共包。
+要求 Rust 1.90+ 和 Cargo；将 `guardengine`、`gitguard`、`archguard` 独立仓库放在同级目录。实际 GitGuard 依赖要求 Rust 1.90。目前是本地 path 依赖，固定公共包发行是单独任务。
 
 ## 可运行示例
 
@@ -85,7 +85,7 @@ spec:
 
 ## 集成边界
 
-SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 是六个独立领域守卫，共用 GuardEngine，不存在 GuardCore。引擎负责通用合同校验、中立规则求值与确定性证据，ArchGuard 负责架构事实与语义。跨守卫编排、MCP、审批、Design Diff 和合并队列候选绑定均为目标。[集成契约草案](docs/integration-contract.md) 与现有协议分离，不能直接作为当前引擎输入。CodeGraph/codegraph-plugin、codereview-plugin 是尚未检查的外部兼容目标，不能视为已安装或验证的组件。
+SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 是六个独立领域守卫，共用 GuardEngine，不存在 GuardCore。引擎负责通用合同校验、中立规则求值与确定性证据，ArchGuard 负责架构事实与语义。跨守卫编排、MCP、审批和 Design Diff 仍是目标。可选本地 Git 桥接已绑定实际候选/base/group/member 对象，不提供队列授权。[集成契约](docs/integration-contract.md) 已作为独立严格 envelope 实现，原生 GuardFacts/GuardReport schema 不变。CodeGraph/codegraph-plugin、codereview-plugin 是尚未检查的外部兼容目标，不能视为已安装或验证的组件。
 
 ## 验证
 

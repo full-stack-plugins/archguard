@@ -20,15 +20,41 @@ impl SnapshotInventory {
         Ok(Self { inputs: result })
     }
     pub fn digest(&self) -> String {
+        self.digest_selected(false)
+    }
+    pub(crate) fn files_digest(&self) -> String {
+        self.digest_selected(true)
+    }
+    fn digest_selected(&self, files_only: bool) -> String {
         let mut h = Sha256::new();
         h.update(b"archguard.cargo.inventory/v1\0");
         for (name, bytes) in &self.inputs {
+            if files_only && !name.starts_with("file:") {
+                continue;
+            }
             h.update((name.len() as u64).to_le_bytes());
             h.update(name.as_bytes());
             h.update((bytes.len() as u64).to_le_bytes());
             h.update(bytes);
         }
         format!("sha256:{:x}", h.finalize())
+    }
+    pub(crate) fn materialize_files(&self, root: &Path) -> Result<(), String> {
+        for (key, bytes) in &self.inputs {
+            let path = key.strip_prefix("file:").ok_or("not a file inventory")?;
+            let destination = root.join(path);
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            use std::io::Write;
+            fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(destination)
+                .and_then(|mut file| file.write_all(bytes))
+                .map_err(|e| e.to_string())?;
+        }
+        Ok(())
     }
     pub fn keys(&self) -> impl Iterator<Item = &str> {
         self.inputs.keys().map(String::as_str)

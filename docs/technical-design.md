@@ -1,6 +1,6 @@
 # ArchGuard — 技术方案与实施设计
 
-> 目标版本 V0.2；软件基线 Rust 0.1.0。已实现功能仅限 Cargo workspace 本地直接依赖禁止边检查，其他均为目标设计。
+> 当前 crate 0.1.0 的受限实现：有界 Cargo 声明、独立严格 GE evidence、local LanguageObservation 系统规则，以及实际 GitGuard 不可变候选源码桥接；任务验收见 implementation-progress.md。真实语言 provider、受信基线/身份和发行仍是目标。以下未明确登记已实现的设计不构成能力声明。
 
 ## 1. 技术选型
 
@@ -190,7 +190,7 @@ cargo run --manifest-path ../guardengine/Cargo.toml -- verify --contract example
 
 ## 12. 目标集成、并发和扩展边界
 
-采用独立的 [GuardRunEnvelope 草案](integration-contract.md)（`guard.integration/v1alpha1`），当前 engine 不解析。它把运行状态 completed/error/cancelled、失败时为空的 decision、repo/task/worktree/requirement/candidate/base/merge-group 绑定、合同/事实/报告摘要引用、分析器覆盖、外部审批与诊断分离。领域 error code 在该包装中版本化，不能给当前 GuardReport 增加 error 字段或虚构 decision=ERROR。
+已实现独立的 [GuardRunEnvelope](integration-contract.md)（`guard.integration/v1alpha1`），由实际 GuardEngine integration API 解析；原生协议保持独立。它把运行状态 completed/error/cancelled、失败时为空的 decision、repo/task/worktree/requirement/candidate/base/merge-group 绑定、合同/事实/报告摘要引用、分析器覆盖、外部审批与诊断分离。领域 error code 在该包装中版本化，不能给当前 GuardReport 增加 error 字段或虚构 decision=ERROR。
 
 建议控制器先冻结输入绑定，再按绑定创建幂等运行记录；任务输出写隔离目录，完成后原子发布只属于该绑定的结果。发布时 compare-and-set 当前候选，过期运行仅归档。改变 candidate/base/merge-group、合同/规则集、分析器/覆盖、基线 revision 或审批状态时失效重跑。若最终 merge-queue candidate 与被检查 head 不同，必须分析实际队列候选，不能缓存复用旧 head 的 ALLOW。
 
