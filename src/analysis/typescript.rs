@@ -10,7 +10,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     fs,
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -171,18 +171,50 @@ fn tool_hash(p: &Path) -> Result<String, TypeScriptFailure> {
 impl TypeScriptToolchain {
     pub fn freeze(node: &Path, compiler: &Path) -> Result<Self, TypeScriptFailure> {
         let pin: Installation = serde_json::from_str(PIN).map_err(|e| e.to_string())?;
-        let node = node.canonicalize().map_err(|e| e.to_string())?;
+        let source = node.canonicalize().map_err(|e| e.to_string())?;
+        let private = tempfile::tempdir().map_err(|e| e.to_string())?;
+        let node = private.path().join("node");
+        let mut input = fs::File::open(source).map_err(|e| e.to_string())?;
+        if !input.metadata().map_err(|e| e.to_string())?.is_file() {
+            return Err("tool must be regular".into());
+        }
+        let mut output = fs::File::create(&node).map_err(|e| e.to_string())?;
+        let start = Instant::now();
+        let mut copied = 0;
+        loop {
+            if start.elapsed() > Duration::from_secs(20) {
+                return Err(TypeScriptFailure::Tool(Failure::Timeout));
+            }
+            let mut buffer = [0; 65536];
+            let count = input.read(&mut buffer).map_err(|e| e.to_string())?;
+            if count == 0 {
+                break;
+            }
+            copied += count;
+            if copied > 192 * 1024 * 1024 {
+                return Err("tool byte budget".into());
+            }
+            output
+                .write_all(&buffer[..count])
+                .map_err(|e| e.to_string())?;
+        }
+        drop(output);
         if tool_hash(&node)? != pin.node_sha256 {
             return Err(TypeScriptFailure::UnsupportedTool);
         }
-        let private = tempfile::tempdir().map_err(|e| e.to_string())?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&node, fs::Permissions::from_mode(0o500))
+                .map_err(|e| e.to_string())?;
+        }
         fs::create_dir(private.path().join("lib")).map_err(|e| e.to_string())?;
         let mut libs = Vec::new();
         let mut total = 0;
         for (file, hash) in &pin.files {
             let mut f = fs::File::open(compiler.join(file)).map_err(|e| e.to_string())?;
             let mut raw = Vec::new();
-            f.by_ref()
+            Read::by_ref(&mut f)
                 .take(16 * 1024 * 1024 + 1)
                 .read_to_end(&mut raw)
                 .map_err(|e| e.to_string())?;

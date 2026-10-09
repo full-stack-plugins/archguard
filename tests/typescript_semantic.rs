@@ -291,3 +291,16 @@ fn global_constructor_and_type_query_keep_actual_cross_file_type_origins() {
             .any(|e| e.from.module() == "app" && e.to.module() == "core")
     );
 }
+#[test]
+fn prepared_toolchain_does_not_execute_a_replaced_node_path() {
+    let t = fixture();
+    let copied = t.0.join("node");
+    std::fs::copy(NODE, &copied).unwrap();
+    let compiler = Path::new(
+        "/workspace/guard-implementation/archguard/fixtures/languages/typescript/node_modules/typescript",
+    );
+    let tools = TypeScriptToolchain::freeze(&copied, compiler).unwrap();
+    std::fs::write(&copied, "#!/bin/sh\nexit 73\n").unwrap();
+    std::fs::remove_file(&copied).unwrap();
+    assert!(tools.analyze(&t.0, &profile()).is_ok());
+}
