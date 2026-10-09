@@ -89,6 +89,9 @@ pub fn prepare_outputs(project: &Path, contract: &Path, paths: &[&Path]) -> io::
         .collect_project(project)
         .and_then(|()| protected.collect(contract, 0));
     let mut errors = Vec::new();
+    if let Err(error) = &protection {
+        errors.push(format!("cannot establish input aliases: {error}"));
+    }
     let mut resolved_outputs = std::collections::HashSet::new();
     let mut safe = Vec::new();
     for path in paths {
@@ -282,7 +285,17 @@ impl ProtectedInputs {
                                     "workspace member must be a string",
                                 )
                             })?;
-                            let pattern = root.join(member);
+                            let literal_root = root.to_str().ok_or_else(|| {
+                                io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    "non UTF-8 workspace root",
+                                )
+                            })?;
+                            // The filesystem root is literal; only the declaration
+                            // supplies glob syntax. An absolute member replaces this
+                            // prefix through Path::join and retains its own pattern.
+                            let escaped_root = glob::Pattern::escape(literal_root);
+                            let pattern = Path::new(&escaped_root).join(member);
                             let pattern = pattern.to_str().ok_or_else(|| {
                                 io::Error::new(
                                     io::ErrorKind::InvalidInput,
@@ -295,7 +308,9 @@ impl ProtectedInputs {
                                     "unsupported workspace member glob",
                                 )
                             })?;
+                            let mut found_member = false;
                             for (index, matched) in matches.enumerate() {
+                                found_member = true;
                                 if index >= 100_000 {
                                     return Err(io::Error::new(
                                         io::ErrorKind::InvalidInput,
@@ -305,7 +320,20 @@ impl ProtectedInputs {
                                 let member =
                                     matched.map_err(|error| io::Error::other(error.to_string()))?;
                                 self.collect(&member, depth)?;
-                                self.discover_manifest(&member.join("Cargo.toml"), depth + 1)?;
+                                let manifest = member.join("Cargo.toml");
+                                if !manifest.is_file() {
+                                    return Err(io::Error::new(
+                                        io::ErrorKind::InvalidInput,
+                                        "declared workspace member has no readable manifest",
+                                    ));
+                                }
+                                self.discover_manifest(&manifest, depth + 1)?;
+                            }
+                            if !found_member {
+                                return Err(io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    "declared workspace member pattern matched no input",
+                                ));
                             }
                         }
                     } else if matches!(

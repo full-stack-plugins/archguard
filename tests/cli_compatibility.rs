@@ -466,3 +466,133 @@ fn symlinked_manifest_preserves_the_dependency_root_actually_read_by_cargo() {
     assert_eq!(output.status.code(), Some(4));
     assert_eq!(std::fs::read(&input).unwrap(), before);
 }
+
+#[cfg(unix)]
+#[test]
+fn literal_glob_metacharacter_ancestors_do_not_change_member_scope() {
+    for name in ["project[1]", "project?", "project*"] {
+        for member_kind in ["literal", "absolute-glob"] {
+            let tmp = common::Temp::new();
+            let parent = tmp.0.join(name);
+            let member_pattern = match member_kind {
+                "literal" => "../member".to_owned(),
+                _ => format!("{}/mem*", glob::Pattern::escape(parent.to_str().unwrap())),
+            };
+            let (workspace, member) =
+                external_member_workspace(&parent, &format!("'{member_pattern}'"));
+            let dependency = parent.join("dependency[2]?*");
+            std::fs::create_dir_all(dependency.join("src")).unwrap();
+            std::fs::write(dependency.join("src/lib.rs"), "").unwrap();
+            std::fs::write(
+                dependency.join("Cargo.toml"),
+                "[package]\nname='dependency'\nversion='0.1.0'\n[workspace]\n",
+            )
+            .unwrap();
+            let mut manifest = std::fs::read_to_string(member.join("Cargo.toml")).unwrap();
+            manifest.push_str("[dependencies]\ndependency={path='../dependency[2]?*'}\n");
+            std::fs::write(member.join("Cargo.toml"), manifest).unwrap();
+            assert_eq!(
+                run(&[
+                    "check",
+                    "--project",
+                    workspace.to_str().unwrap(),
+                    "--contract",
+                    "examples/agent-job-contract.yaml"
+                ])
+                .status
+                .code(),
+                Some(0),
+                "real Cargo fixture {name}/{member_kind} must be valid"
+            );
+            for input in [member.join("Cargo.toml"), dependency.join("Cargo.toml")] {
+                let before = std::fs::read(&input).unwrap();
+                let safe = tmp.0.join("old-report.json");
+                std::fs::write(&safe, "OLD SUCCESS").unwrap();
+                let output = run(&[
+                    "check",
+                    "--project",
+                    workspace.to_str().unwrap(),
+                    "--contract",
+                    "examples/agent-job-contract.yaml",
+                    "--report",
+                    input.to_str().unwrap(),
+                    "--facts",
+                    safe.to_str().unwrap(),
+                ]);
+                assert_eq!(output.status.code(), Some(4), "{name}/{member_kind}");
+                assert_eq!(std::fs::read(&input).unwrap(), before);
+                assert!(
+                    !safe.exists(),
+                    "unrelated safe artifact must still be invalidated"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn unresolved_member_scope_fails_closed_for_existing_and_new_destinations() {
+    for members in [
+        "'../missing'",
+        "'../missing*'",
+        "'../empty'",
+        "'../[broken'",
+    ] {
+        for existing in [false, true] {
+            let tmp = common::Temp::new();
+            let workspace = tmp.0.join("workspace");
+            std::fs::create_dir(&workspace).unwrap();
+            std::fs::create_dir(tmp.0.join("empty")).unwrap();
+            std::fs::write(
+                workspace.join("Cargo.toml"),
+                format!("[workspace]\nmembers=[{members}]\nresolver='2'\n"),
+            )
+            .unwrap();
+            let report = tmp.0.join("report.json");
+            if existing {
+                std::fs::write(&report, "OLD SUCCESS").unwrap();
+            }
+            let output = run(&[
+                "check",
+                "--project",
+                workspace.to_str().unwrap(),
+                "--contract",
+                "examples/agent-job-contract.yaml",
+                "--report",
+                report.to_str().unwrap(),
+            ]);
+            assert_eq!(
+                output.status.code(),
+                Some(4),
+                "scope {members}, existing={existing}"
+            );
+            if existing {
+                assert_eq!(std::fs::read(&report).unwrap(), b"OLD SUCCESS");
+            } else {
+                assert!(!report.exists());
+            }
+            assert!(
+                String::from_utf8_lossy(&output.stderr).contains("cannot establish input aliases")
+            );
+        }
+    }
+}
+
+#[test]
+fn manifest_parse_error_cannot_publish_to_a_new_output_path() {
+    let tmp = common::Temp::new();
+    std::fs::write(tmp.0.join("Cargo.toml"), "[workspace\n").unwrap();
+    let report = tmp.0.join("report.json");
+    let output = run(&[
+        "check",
+        "--project",
+        tmp.0.to_str().unwrap(),
+        "--contract",
+        "examples/agent-job-contract.yaml",
+        "--report",
+        report.to_str().unwrap(),
+    ]);
+    assert_eq!(output.status.code(), Some(4));
+    assert!(!report.exists());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("cannot establish input aliases"));
+}

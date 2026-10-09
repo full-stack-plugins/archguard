@@ -44,3 +44,9 @@ The correction separates per-destination classification from best-effort safe in
 A second independent review found that directory-only protection missed valid `workspace.members = ["../member"]` layouts. New test-first regressions cover literal/`*`/bracket member patterns, root/member entrypoints, both output flags with independent safe cleanup, transitive external nonmember path dependencies, and symlinked manifest source-relative references confirmed by real Cargo metadata.
 
 The implementation now discovers a conservative manifest-reference closure without invoking Cargo during preparation. Existing external declared inputs and their aliases remain unchanged. Fixed `glob = 0.3.3` supplies Cargo-style pattern expansion; its official metadata declares MIT OR Apache-2.0 and Rust 1.63.0 minimum. Uncertain inspection preserves existing files with an explicit error. This does not change the previously documented OS isolation limitations or add any language/domain/evidence capability. No task checkbox changed.
+
+## Literal-root glob correction — task 1.5 pending re-review
+
+The next review reproduced an external-member omission when a literal ancestor directory contained `[1]`. New test-first regressions cover Unix ancestor names containing brackets, question marks and stars; literal member declarations and absolute declared patterns; literal metacharacter path dependencies; input preservation plus independent safe cleanup. The literal root prefix is now escaped separately from the declared pattern.
+
+Unmatched member patterns, matched members missing manifests, and manifest/glob parse errors now reject publication to both existing and new destinations. Previously a protection error could be ignored when every requested destination was new; the test reproduced that path before correction. This is an intentional safety tightening and does not change task 1.4's partial status or mark task 1.5 accepted.

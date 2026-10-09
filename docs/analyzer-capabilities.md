@@ -46,3 +46,9 @@ The protection scope now follows the read-only Cargo manifest reference closure,
 For a symlinked manifest, both its canonical storage parent and the manifest's source parent participate in reference resolution. The inspected `(canonical manifest, source parent)` pair prevents cycles without discarding distinct alias origins. Real Cargo metadata is used only in regression fixtures to verify the source-origin behavior; output preparation itself never invokes Cargo.
 
 The existing entry/depth/manifest limits remain, with a 100,000-match limit per member pattern. Glob expansion and static filesystem inspection do not claim a wall-clock or OS-containment bound. Repeated output publication should use a location outside **all declared protected input roots**, including external workspace members and referenced local packages, not merely outside the workspace directory.
+
+### Literal roots and unresolved member patterns
+
+The literal filesystem root is escaped with `glob::Pattern::escape` before joining a relative member declaration. Only the declaration contributes pattern syntax; absolute declarations retain their own pattern without a prepended root. Ancestor names containing `[]`, `?` or `*` therefore cannot silently alter protection scope. Explicit local dependency paths continue to be interpreted literally.
+
+A declared member pattern with no matches, a matched member without Cargo.toml, or any manifest/glob parsing failure now makes output preparation fail closed, including for newly requested output paths. No artifact is published on that failure. Existing destinations whose safety cannot be established are retained with an explicit error; consumers must use the current status. This intentionally tightens publication behavior for invalid/unresolved input scope. Legacy scans without requested file outputs retain their existing analysis behavior.
