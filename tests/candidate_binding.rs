@@ -88,8 +88,14 @@ fn actual_git_candidate_is_analyzed_instead_of_mutable_head_for_both_formats() {
         let p = policy();
         let s = snapshot(&repo, &base, &candidate, &p);
         let prepared = GitCargoEvidence::prepare(&repo, &s, p).unwrap();
+        let frozen_binding = prepared.binding().clone();
+        assert_ne!(
+            frozen_binding.source_snapshot_digest,
+            s.source_snapshot_digest()
+        );
         std::fs::write(dir.0.as_path().join("Cargo.toml"), "mutable poison").unwrap();
         let result = prepared.run(&AtomicBool::new(false)).unwrap();
+        assert_eq!(result.cargo().envelope.binding, frozen_binding);
         assert_eq!(result.cargo().envelope.binding.candidate_oid, candidate);
         assert_eq!(result.object_format(), format);
         assert_eq!(

@@ -21,6 +21,11 @@ pub struct CargoEvidence {
     attempt: BoundAttempt,
 }
 impl CargoEvidence {
+    /// Frozen before execution; this observation conveys no admission authority.
+    pub fn binding(&self) -> &RunBinding {
+        &self.binding
+    }
+
     pub fn prepare(
         root: &Path,
         policy: ProtectedCargoPolicy,

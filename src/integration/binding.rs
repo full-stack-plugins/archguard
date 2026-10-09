@@ -56,6 +56,11 @@ pub struct GitCargoEvidence {
     files_digest: String,
 }
 impl GitCargoEvidence {
+    /// Exact prepared Cargo binding, including its independently scoped source digest.
+    pub fn binding(&self) -> &guardengine::integration::RunBinding {
+        self.cargo.binding()
+    }
+
     pub fn prepare(
         repo: &Repository,
         candidate: &CandidateSnapshot,
