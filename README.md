@@ -59,7 +59,15 @@ spec:
 
 `CargoWorkspaceAnalyzer` implements `guardengine::GuardAnalyzer`, returning `GuardFacts`. The engine has no Cargo-specific knowledge. This is the first adapter, not a general code graph.
 
-Read [Architecture](docs/architecture.md), [OpenSpec implementation](openspec/changes/add-cargo-workspace-guard/), and [GuardEngine protocol](../guardengine/docs/protocol.md).
+Read [Architecture](docs/architecture.md), [OpenSpec implementation](openspec/changes/add-cargo-workspace-guard/), and [GuardEngine protocol](https://github.com/full-stack-plugins/guardengine/blob/main/docs/protocol.md).
+
+## Architectural governance roadmap
+
+The complete ArchGuard design includes **System Guard** (layering, module dependencies and cycles), **Domain Guard** (bounded contexts, aggregates and state invariants), **Object Guard** (types, ownership and public APIs), and **Method Guard** (signatures, call relationships and side effects). These are **future capabilities**, not features of the current Cargo-only analyzer.
+
+The distinction between deterministic **ENFORCE** checks and human **REVIEW** of architectural trade-offs is part of the architecture contract. Design Diff and the code graph must retain source locations, analyzer coverage, unknown relations and the approved baseline rather than producing a universal quality score.
+
+Read the expanded [architecture and ADRs](docs/architecture.md) and the [technical implementation design](docs/technical-design.md) for detailed module boundaries, Java/Rust/TypeScript adapters, rule semantics, CI trust conditions, milestones and negative-test criteria.
 
 ## Test
 
