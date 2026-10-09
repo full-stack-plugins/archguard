@@ -32,3 +32,9 @@ TDD evidence and exact acceptance status are recorded in the external slice repo
 - Groups 3–5: deferred beyond this slice. Root supplied emerging GE API and SpecGuard fixture handoff; neither is consumed or misrepresented as reviewed interoperability.
 
 Final Rust verification: 27 tests pass, including all original five. Formatting, warning-free clippy and strict old/new OpenSpec validation passed before the local commit. All OpenSpec checkboxes remain unchanged. See external `archguard-slice1-report.md` for commands, RED/GREEN history, TDD evidence limits, commits and remaining acceptance gates.
+
+## Review corrections — task 1.5
+
+Independent review accepted 1.1/1.2/1.3 only within the documented restricted Cargo scope and left 1.4 partial. Two task-1.5 findings reproduced in new tests: one bad output destination preserved another old success file, and output invalidation could delete member manifests/lockfiles/source.
+
+The correction separates per-destination classification from best-effort safe invalidation. Existing project/workspace input entries, contract aliases, symlinks and hardlinks are preserved; independently safe external destinations are still cleaned when another destination fails. New output paths remain usable. Existing in-project output replacement is intentionally no longer supported and returns exit 4 with `not modifying` diagnostics. Consumers must use this attempt's status, not old file existence. Full acceptance remains pending re-review; no new task checkboxes or language capability claims are added.

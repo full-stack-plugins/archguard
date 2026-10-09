@@ -41,26 +41,11 @@ fn run() -> Result<Decision, Box<dyn std::error::Error>> {
         .flatten()
         .map(Path::new)
         .collect();
-    // Validate all destinations before invalidation, including input aliases.
-    let resolved: Vec<_> = destinations
-        .iter()
-        .map(|p| archguard::integration::cli::resolved_destination(p))
-        .collect::<Result<_, _>>()?;
-    let protected: Vec<_> = [
-        Path::new(contract).to_path_buf(),
-        Path::new(project).join("Cargo.toml"),
-    ]
-    .into_iter()
-    .filter_map(|p| p.canonicalize().ok())
-    .collect();
-    if resolved.iter().any(|p| protected.contains(p))
-        || (resolved.len() == 2 && resolved[0] == resolved[1])
-    {
-        return Err("output aliases an input or another output".into());
-    }
-    for path in &destinations {
-        archguard::integration::cli::invalidate_output(path)?;
-    }
+    archguard::integration::cli::prepare_outputs(
+        Path::new(project),
+        Path::new(contract),
+        &destinations,
+    )?;
     let parsed = load_contract_yaml(&fs::read(contract)?)?;
     let facts = match argument(&args, "--profile").unwrap_or("legacy") {
         "legacy" => CargoWorkspaceAnalyzer.analyze(Path::new(project), project)?,
