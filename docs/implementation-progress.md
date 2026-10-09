@@ -120,3 +120,10 @@ Behavioral RED reproduced escaped setsid descendant writing after timeout, inval
 
 
 Task1.4 validation:91all-target tests pass on default Rust and official1.90, including15runner tests plus the pinned-directory replacement unit test; Clippy-Dwarnings, fmt/diff and strict OpenSpec pass. Exact RED/GREEN commands, final dependency archive verification and platform limitations are recorded in external archguard-runner-slice-report.md. No new dependency or MSRV increase. Task1.4 remains unchecked for independent review.
+
+
+## Bounded fixed-tool runner accepted
+
+Task 1.4 accepted at `22c1716183840a27c93400f9a2b8b0c074cdb328` after independent fixed-source review. All 91 maintained tests and an additional raw-syscall probe passed. Actual setsid escape attempts, pipe-holding/background descendants, invalid budgets, dual-stream output bounds, FIFO/path-replacement copying and Cargo lockfile isolation were exercised. WNOWAIT keeps the owned leader unreaped until process-group cleanup; inherited seccomp restricts group/namespace escape. Descriptor-relative copying rejects symlink/FIFO escapes and checks count/bytes/depth/time budgets.
+
+Acceptance is the tested Linux x86_64 trusted fixed-tool/isolated-copy profile. It does not qualify arbitrary hostile executables, general filesystem/network sandboxing, process-count limits, hard interruption of filesystem syscalls, aarch64 execution or production authority. Enhanced tool failure remains error4 and legacy partial remains BLOCK2. Evidence: cloud ledger `archguard-runner-independent-review.md` and associated fixed-source suite/probe logs.

@@ -35,7 +35,7 @@
 - [x] 1.1 在 `src/analysis/profile.rs` 定义 FrozenAnalysisProfile 和规则适用性校验（Requirement: Frozen Architecture Analysis Profile）；`tests/analysis_profile.rs` 验证缺失成员、未支持关系、候选删除 scope，三者不能用无匹配满足完整义务；普通 allowed 仍通过。
 - [x] 1.2 在 `src/analysis/cargo.rs` 保存真实成员、依赖 kind/optional/target/source 的声明模型并独立保留 legacy 投影（Requirement: Cargo Declaration Provenance）；`fixtures/profile/` + `tests/analysis_profile.rs` 覆盖 rename/dev/build/optional/target/non-member，断言增强声明不丢失、旧四元组去重且不产生非成员边。
 - [x] 1.3 在 `src/analysis/snapshot.rs` 冻结 capability 输入 inventory 与 canonicalization，先以配置/锁文件/工具链影响 fixture 决定 profile（Requirement: Declared Snapshot Inventory）；`tests/snapshot.rs` 断言相同字节顺序变化稳定、每个声明影响输入变动失效，并保留旧 manifest digest golden。
-- [ ] 1.4 在 `src/analysis/runner.rs` 以隔离副本和 allowlisted roots 实现超时/输出/文件规模预算（Requirement: Bounded Architecture Execution）；`tests/runner_failures.rs` 用受控假工具覆盖超时、超额、路径逃逸与非零退出，断言停止执行且不产生成功空图，原工作树不被 Cargo 锁文件写入影响。
+- [x] 1.4 在 `src/analysis/runner.rs` 以隔离副本和 allowlisted roots 实现超时/输出/文件规模预算（Requirement: Bounded Architecture Execution）；`tests/runner_failures.rs` 用受控假工具覆盖超时、超额、路径逃逸与非零退出，断言停止执行且不产生成功空图，原工作树不被 Cargo 锁文件写入影响。
 - [x] 1.5 在 `src/main.rs` 和 `src/integration/cli.rs` 的未来集成点冻结显式 profile 选择和安全输出发布（Requirement: Legacy Cargo CLI Compatibility）；`tests/cli_compatibility.rs` 运行原五项及 review/advise、根缺失、输出不可写 golden，断言 legacy 退出 0/2/3/4、stdout/--report 语义不变且失败不复用旧产物。
 
 ## 2. Language Providers and System Rules — profile 完成后逐语言推进
