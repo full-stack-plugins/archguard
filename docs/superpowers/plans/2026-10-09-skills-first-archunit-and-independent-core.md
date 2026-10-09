@@ -33,7 +33,7 @@
 
 当前 ArchGuard 是 Rust crate：`Cargo.toml`、`src/main.rs`、`src/lib.rs`；工作区已检索的插件 manifest 中未找到 ArchGuard-Plugin 宿主（发现的 CodeGuard/旧 FlowGuard 插件不是替代目标）。故任务 4 先定位真实宿主及契约，再补准确文件/API/原生测试命令；此缺口仅阻塞插件代码，不能在 Rust 仓库凭空新建宿主入口。
 
-本环境 `java -version` 为 OpenJDK 21.0.12.1，PATH 未找到 mvn/gradle；未执行 Java 功能测试或技能 lint。官方 [ArchUnit 指南](https://www.archunit.org/userguide/html/000_Index.html) 确认原生 Maven/Gradle test 依赖及 JUnit 5 接入；[JUnit 5.12.2 指南](https://docs.junit.org/5.12.2/user-guide/) 作为候选版本资料。文档查询不等于兼容实测，Gradle 版本文档本次抓取失败；具体 ArchUnit/JUnit/构建插件/wrapper/JDK 组合必须在任务 1 固定并经任务 2、3 验证。
+本环境默认 `java -version` 为 OpenJDK 21.0.12.1，默认 PATH 未找到 mvn/gradle；`/workspace/guard-toolchain` 已有 JDK 21、Maven、Gradle，可按其 `native-env.sh` 配置复用。默认 PATH 状态不是外部阻塞；未来在任务授权内创建可写隔离 checkout、使用或准备所需工具并记录来源，本轮仅因 plan-only 不执行。未执行 Java 功能测试或技能 lint。官方 [ArchUnit 指南](https://www.archunit.org/userguide/html/000_Index.html) 确认原生 Maven/Gradle test 依赖及 JUnit 5 接入；[JUnit 5.12.2 指南](https://docs.junit.org/5.12.2/user-guide/) 作为候选版本资料。文档查询不等于兼容实测，Gradle 版本文档本次抓取失败；具体 ArchUnit/JUnit/构建插件/wrapper/JDK 组合必须在任务 1 固定并经任务 2、3 验证。
 
 依赖：`1 → 2 → 3` 形成可独立交付的 Java 技能；`1 → 4（定位），2+3+宿主定位 → 4（接入）`；任务 5 独立执行，不阻塞任务 1–4，也不等待其他守卫实现流。
 
@@ -44,7 +44,7 @@
 **Interfaces:** 输入构建文件、wrapper、JDK/框架、包结构及确认的架构边界；输出目标项目依赖差异、`example.order.ArchitectureRulesTest`、规则契约及证据。`ARCH-JAVA-001` 固定为禁止 `example.order.web.. → example.order.infrastructure..`；契约记录版本、作用域、允许/禁止依赖与排除，不引入中央服务。
 
 - [ ] 先记录技能/注册/双语索引缺失这一基线；在未来工作 checkout 运行现有 lint，区分旧错误与新增错误。
-- [ ] 在 `compatibility.md` 记录候选的完整精确版本：JDK 发行版/版本、ArchUnit、JUnit BOM、Maven、Surefire/Compiler 插件、Gradle 与 wrapper；用对应官方版本文档核验运行 JDK/字节码与测试发现要求，保留来源。版本选择完成才进入任务 2；工具不可用时明确阻塞，不自行安装。
+- [ ] 在 `compatibility.md` 记录候选的完整精确版本：JDK 发行版/版本、ArchUnit、JUnit BOM、Maven、Surefire/Compiler 插件、Gradle 与 wrapper；用对应官方版本文档核验运行 JDK/字节码与测试发现要求，保留来源。版本选择完成才进入任务 2；优先复用 `/workspace/guard-toolchain`，按任务授权准备所需工具并记录来源，无法获得时再报告具体阻塞。
 - [ ] 编写技能及 references：包、分层、循环、命名和自定义规则；职责/业务语义标为需评审。明确用户授权内展示差异和运行，不隐式升级、改规则或新增豁免；到期或规则/配置变化使例外待重审，新增违规仍失败。
 - [ ] 注册 `./skills/archunit` 并更新双语索引；运行 `python3 scripts/lint_skills.py`，确认新增技能无错误、引用路径存在、JSON 可解析；仅该任务变更提交 `docs: add archunit skill and native build guidance`。
 
@@ -99,4 +99,4 @@
 
 Java 完成 = 注册/双语索引/lint + Maven、Gradle 各自真实 pass→可编译违规→修复 pass + 防假通过负例 + 完整版本/报告证据。插件完成另需真实宿主发现/调用验证；宿主未知不能称完成。核心完成另需独立分发、旧能力回归和可选集成防伪证据；其阻塞不撤销 Java 已完成交付。
 
-本计划没有声称执行上述测试或验证任何兼容组合。外部未定点只有：可写 Java 技能工作 checkout/工具链、实际宿主仓库与调用契约、GE 可分发来源；各自在所属任务入口闭合，不扩张到其他语言或其他守卫产品实现。
+本计划没有声称执行上述测试或验证任何兼容组合。待落实前置为实际宿主仓库与调用契约、GE 可分发来源及尚未经实际验证的版本矩阵；各自在所属任务闭合。可写隔离 checkout 与既有工具链复用是后续已授权工程步骤，不是外部未定点；不扩张到其他语言或其他守卫产品实现。
