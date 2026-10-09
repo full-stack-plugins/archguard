@@ -116,7 +116,7 @@ MCP 未来暴露 doctor/scan/explain/diff/impact 的只读检查能力；报告�
 - 范围边界：对只读分析器限制访问目录，符号链接逃逸、外部路径和非预期构建脚本需要额外授权或阻断。
 - 事实可靠性：source span、摘要和输入树绑定；缓存以语言工具/规则/源码哈希组合键控。
 - 输出安全：日志限制大小、截断声明、敏感源码脱敏；不能执行从代码注释或模型报告中提取的指令。
-- 超时和取消：目标适配器施加子进程资源预算与逐分析器超时；超时/崩溃为 error、decision=null，取消为 cancelled。局部事实或历史 BLOCK 报告只作诊断工件，不冒充已完成运行。当前 CLI 的 metadata 故障仍按第 9 节返回 partial/BLOCK，不在文档变更中改写既有行为。
+- 超时和取消：目标适配器施加子进程资源预算与逐分析器超时；超时/崩溃为 error、decision=null，取消为 cancelled。局部事实或历史 BLOCK 报告只作诊断工件，不冒充已完成运行。当前 CLI 的 metadata 故障仍按第 10 节返回 partial/BLOCK，不在文档变更中改写既有行为。
 - Provenance：本地 SHA-256 一致性不是受信供应链 attestation；签名、可信运行身份及权限控制后续实施。
 
 ## 8. 实施计划与真实验收
@@ -213,3 +213,8 @@ cargo run --manifest-path ../guardengine/Cargo.toml -- verify --contract example
 OpenSpec task list 中原型任务已勾选，发布 GuardEngine、Java/TS/深层 Rust、受保护策略和签名仍未完成；本文 A1–A5 并不在现有已完成规格中。待决策包括覆盖 schema 的版本演进、源码/环境全量摘要策略、SymbolId、性能预算、审批供应商和审计保留期。默认先隔离扩展与当前协议，避免无版本字段扩张。
 
 本次文档核对（2026-10-09）：已逐项阅读源码、5 个现有测试和 OpenSpec，检查文档相对链接与 `git diff --check`。环境没有可用的 Cargo/OpenSpec 命令，因此未声称本次 fmt/clippy/test 或 OpenSpec validate 通过。上表新增案例仍是待实现的验收目标。
+
+
+### 集成错误的绑定前置条件
+
+上述目标 error/cancelled 信封只适用于调用身份、精确候选/基底、producer 与必查覆盖已经冻结的尝试。参数非法、仓库不可解析或绑定歧义等前置故障使用独立传输诊断和失败退出状态，不生成 GuardRunEnvelope，不伪造 OID 或空字段；当前各 CLI 的既有行为仍按本文事实表保留。详见[共享契约](integration-contract.md)。
