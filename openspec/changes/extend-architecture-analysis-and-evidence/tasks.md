@@ -1,6 +1,6 @@
 # ArchGuard Analysis and Evidence Implementation Plan
 
-> **For agentic workers:** 后续执行按任务使用 superpowers:subagent-driven-development 或 superpowers:executing-plans；当前只提交规划，不启动实现。本 change 的所有任务保持未勾选。
+> **For agentic workers:** 后续执行按任务使用 superpowers:subagent-driven-development 或 superpowers:executing-plans；已获后续实现授权；截至独立复核提交 6e71e725，1.1/1.2/1.3/1.5 共 4/25 项获根协调者验收（restricted Cargo 范围），其余未勾选。
 
 **Goal:** 从 Cargo 原型演进出范围明确、领域契约驱动、候选绑定且可审计的架构分析。
 
@@ -32,11 +32,11 @@
 **Surfaces:** 拟新增 `src/analysis/{profile,cargo,snapshot,runner}.rs`，现有 `src/lib.rs`/`src/main.rs`，`tests/analysis_profile.rs`/`tests/cli_compatibility.rs`，`fixtures/profile/`。
 **Interfaces:** ProtectedScope → FrozenAnalysisProfile；冻结项目/Profile → ArchitectureObservation 或 typed failure；legacy projection 保持 GuardAnalyzer 的 GuardFacts。
 
-- [ ] 1.1 在 `src/analysis/profile.rs` 定义 FrozenAnalysisProfile 和规则适用性校验（Requirement: Frozen Architecture Analysis Profile）；`tests/analysis_profile.rs` 验证缺失成员、未支持关系、候选删除 scope，三者不能用无匹配满足完整义务；普通 allowed 仍通过。
-- [ ] 1.2 在 `src/analysis/cargo.rs` 保存真实成员、依赖 kind/optional/target/source 的声明模型并独立保留 legacy 投影（Requirement: Cargo Declaration Provenance）；`fixtures/profile/` + `tests/analysis_profile.rs` 覆盖 rename/dev/build/optional/target/non-member，断言增强声明不丢失、旧四元组去重且不产生非成员边。
-- [ ] 1.3 在 `src/analysis/snapshot.rs` 冻结 capability 输入 inventory 与 canonicalization，先以配置/锁文件/工具链影响 fixture 决定 profile（Requirement: Declared Snapshot Inventory）；`tests/snapshot.rs` 断言相同字节顺序变化稳定、每个声明影响输入变动失效，并保留旧 manifest digest golden。
+- [x] 1.1 在 `src/analysis/profile.rs` 定义 FrozenAnalysisProfile 和规则适用性校验（Requirement: Frozen Architecture Analysis Profile）；`tests/analysis_profile.rs` 验证缺失成员、未支持关系、候选删除 scope，三者不能用无匹配满足完整义务；普通 allowed 仍通过。
+- [x] 1.2 在 `src/analysis/cargo.rs` 保存真实成员、依赖 kind/optional/target/source 的声明模型并独立保留 legacy 投影（Requirement: Cargo Declaration Provenance）；`fixtures/profile/` + `tests/analysis_profile.rs` 覆盖 rename/dev/build/optional/target/non-member，断言增强声明不丢失、旧四元组去重且不产生非成员边。
+- [x] 1.3 在 `src/analysis/snapshot.rs` 冻结 capability 输入 inventory 与 canonicalization，先以配置/锁文件/工具链影响 fixture 决定 profile（Requirement: Declared Snapshot Inventory）；`tests/snapshot.rs` 断言相同字节顺序变化稳定、每个声明影响输入变动失效，并保留旧 manifest digest golden。
 - [ ] 1.4 在 `src/analysis/runner.rs` 以隔离副本和 allowlisted roots 实现超时/输出/文件规模预算（Requirement: Bounded Architecture Execution）；`tests/runner_failures.rs` 用受控假工具覆盖超时、超额、路径逃逸与非零退出，断言停止执行且不产生成功空图，原工作树不被 Cargo 锁文件写入影响。
-- [ ] 1.5 在 `src/main.rs` 和 `src/integration/cli.rs` 的未来集成点冻结显式 profile 选择和安全输出发布（Requirement: Legacy Cargo CLI Compatibility）；`tests/cli_compatibility.rs` 运行原五项及 review/advise、根缺失、输出不可写 golden，断言 legacy 退出 0/2/3/4、stdout/--report 语义不变且失败不复用旧产物。
+- [x] 1.5 在 `src/main.rs` 和 `src/integration/cli.rs` 的未来集成点冻结显式 profile 选择和安全输出发布（Requirement: Legacy Cargo CLI Compatibility）；`tests/cli_compatibility.rs` 运行原五项及 review/advise、根缺失、输出不可写 golden，断言 legacy 退出 0/2/3/4、stdout/--report 语义不变且失败不复用旧产物。
 
 ## 2. Language Providers and System Rules — profile 完成后逐语言推进
 

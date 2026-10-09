@@ -2,6 +2,7 @@
 //! It produces neutral GuardFacts and delegates evaluation to GuardEngine.
 
 pub mod analysis;
+pub mod domain;
 pub mod integration;
 
 use analysis::cargo::{CargoObservation, DependencyDeclaration};

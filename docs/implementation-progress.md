@@ -1,6 +1,6 @@
 # ArchGuard implementation ledger
 
-Base: 9ed191acf3c3b1f9c0ca9edf3d0621b6a7c53f04. Local branch only; all approved task checkboxes remain pending review.
+Base: 9ed191acf3c3b1f9c0ca9edf3d0621b6a7c53f04. Local branch only. Root acceptance checkpoint: 4/25 tasks accepted (1.1, 1.2, 1.3, 1.5) at independently reviewed commit 6e71e725; restricted Cargo scope only. Task 1.4 remains partial. New task 2.1 typed model slice is partial and pending review.
 
 | Task | Executable slice / verification | Prerequisite |
 |---|---|---|
@@ -17,7 +17,7 @@ Base: 9ed191acf3c3b1f9c0ca9edf3d0621b6a7c53f04. Local branch only; all approved 
 
 TDD evidence and exact acceptance status are recorded in the external slice report. Baseline: original five tests passed before changes.
 
-## Slice 1 status (pending root review)
+## Historical slice 1 status (superseded by acceptance checkpoint above)
 
 - 1.1: implemented locally. Owned protected scope, unknown-member/unsupported-relation gaps, candidate scope-copy isolation, ordinary complete ALLOW, explicit profile selection.
 - 1.2: implemented locally. Real Cargo declaration fixture plus canonical declaration ordering; legacy tuple and manifest golden preserved. Domain artifact serialization/envelope belongs to later integration.
@@ -50,3 +50,9 @@ The implementation now discovers a conservative manifest-reference closure witho
 The next review reproduced an external-member omission when a literal ancestor directory contained `[1]`. New test-first regressions cover Unix ancestor names containing brackets, question marks and stars; literal member declarations and absolute declared patterns; literal metacharacter path dependencies; input preservation plus independent safe cleanup. The literal root prefix is now escaped separately from the declared pattern.
 
 Unmatched member patterns, matched members missing manifests, and manifest/glob parse errors now reject publication to both existing and new destinations. Previously a protection error could be ignored when every requested destination was new; the test reproduced that path before correction. This is an intentional safety tightening and does not change task 1.4's partial status or mark task 1.5 accepted.
+
+## Next independent slice: task 2.1 typed language model
+
+Implement versioned Module/Type/Method symbol identity, provider-supplied canonical signature, source span and confirmed/unknown relation coverage in `src/domain/model.rs`. Tests in `tests/language_matrix.rs` must distinguish overloads, languages, modules and delimiter-like names, preserve source provenance, and prevent unresolved dispatch from presenting complete coverage or invented confirmed edges. This is the model portion of 2.1 only: no Java/TypeScript/Rust provider or serialized artifact is published. The earlier TS 5.9.3 evaluation remains the actual fixed-tool assessment. Full provider resource/configuration matrices and ADR review remain open. Task 1.5 awaits separate review; no checkboxes change.
+
+Current model slice validation: 43 Rust tests, fmt, warning-free Clippy and strict OpenSpec 2/2 passed. Initial model tests failed compilation on the absent domain API; a separate blank unknown-reason regression then failed behaviorally before validation was added. No production language provider is claimed.
