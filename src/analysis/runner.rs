@@ -1,4 +1,4 @@
-//! Bounded subprocess and isolated-input helpers. These are not an OS sandbox.
+//! Bounded fixed-tool Linux execution and isolated-input helpers; not a general OS sandbox.
 //! The declaration entrypoint accepts only fixed Cargo/rustc tools and rejects
 //! configurations that could select extra executables or external input paths.
 use std::{
@@ -8,7 +8,6 @@ use std::{
     io::Read,
     path::{Component, Path, PathBuf},
     process::{Command, Stdio},
-    sync::atomic::{AtomicU64, Ordering},
     thread,
     time::{Duration, Instant},
 };
@@ -34,6 +33,26 @@ impl Default for Budget {
         }
     }
 }
+impl Budget {
+    fn validate(&self) -> Result<(), Failure> {
+        let max = Self::default();
+        if self.timeout.is_zero()
+            || self.timeout > max.timeout
+            || self.output_bytes == 0
+            || self.output_bytes > max.output_bytes
+            || self.file_bytes == 0
+            || self.file_bytes > max.file_bytes
+            || self.total_bytes == 0
+            || self.total_bytes > max.total_bytes
+            || self.files == 0
+            || self.files > max.files
+            || self.depth > max.depth
+        {
+            return Err(Failure::Input("invalid or excessive runner budget".into()));
+        }
+        Ok(())
+    }
+}
 #[derive(Debug, PartialEq, Eq)]
 pub enum Failure {
     Input(String),
@@ -42,6 +61,7 @@ pub enum Failure {
     Exit(Option<i32>),
     Start(String),
     UnsupportedPlatform,
+    Cleanup,
 }
 impl std::fmt::Display for Failure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -50,9 +70,20 @@ impl std::fmt::Display for Failure {
 }
 impl std::error::Error for Failure {}
 
+#[cfg(all(
+    target_os = "linux",
+    target_endian = "little",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+))]
+mod linux;
+
+#[cfg(all(
+    target_os = "linux",
+    target_endian = "little",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+))]
 /// Caller supplies an already trusted executable, arguments and environment.
 /// This primitive grants no authority to arbitrary candidate-selected tools.
-#[cfg(unix)]
 pub fn run(
     tool: &Path,
     args: &[OsString],
@@ -61,7 +92,10 @@ pub fn run(
     budget: &Budget,
 ) -> Result<Vec<u8>, Failure> {
     use std::os::unix::process::CommandExt;
-    let mut child = Command::new(tool)
+    budget.validate()?;
+    let filter = linux::filter();
+    let mut command = Command::new(tool);
+    command
         .args(args)
         .current_dir(cwd)
         .env_clear()
@@ -69,9 +103,13 @@ pub fn run(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .process_group(0)
-        .spawn()
-        .map_err(|e| Failure::Start(e.to_string()))?;
+        .process_group(0);
+    // SAFETY: precomputed filter; the hook only executes async-signal-safe
+    // syscalls, after std establishes the initial group and before exec.
+    unsafe {
+        command.pre_exec(move || linux::install(&filter));
+    }
+    let mut child = command.spawn().map_err(|e| Failure::Start(e.to_string()))?;
     use std::os::fd::AsRawFd;
     let mut stdout = child.stdout.take().expect("piped stdout");
     let mut stderr = child.stderr.take().expect("piped stderr");
@@ -123,14 +161,8 @@ pub fn run(
                     Err(e) => return Err(Failure::Input(e.to_string())),
                 }
             }
-            match child.try_wait() {
-                Ok(Some(status)) if stdout_eof && stderr_eof => {
-                    return if status.success() {
-                        Ok(())
-                    } else {
-                        Err(Failure::Exit(status.code()))
-                    };
-                }
+            match linux::exited(child.id()) {
+                Ok(true) if stdout_eof && stderr_eof => return Ok(()),
                 Ok(_) => (),
                 Err(e) => return Err(Failure::Input(e.to_string())),
             }
@@ -139,17 +171,33 @@ pub fn run(
             }
         }
     })();
-    // Kill the dedicated process group. Deliberate session escapes require an OS
-    // sandbox/cgroup, outside this trusted-tool primitive's containment promise.
+    // Leader has not been reaped: its numeric PID/PGID cannot be reused.
+    // The inherited filter prevents descendants changing session or group.
     // SAFETY: child was started in a new group with its positive PID as PGID.
     unsafe {
         libc::kill(-(child.id() as i32), libc::SIGKILL);
     }
-    let _ = child.wait();
+    let cleanup = Instant::now();
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if cleanup.elapsed() < Duration::from_millis(250) => {
+                thread::sleep(Duration::from_millis(2))
+            }
+            _ => return Err(Failure::Cleanup),
+        }
+    };
     result?;
+    if !status.success() {
+        return Err(Failure::Exit(status.code()));
+    }
     Ok(output)
 }
-#[cfg(not(unix))]
+#[cfg(not(all(
+    target_os = "linux",
+    target_endian = "little",
+    any(target_arch = "x86_64", target_arch = "aarch64")
+)))]
 pub fn run(
     _: &Path,
     _: &[OsString],
@@ -160,23 +208,32 @@ pub fn run(
     Err(Failure::UnsupportedPlatform)
 }
 
-static NEXT: AtomicU64 = AtomicU64::new(0);
+#[cfg(target_os = "linux")]
+mod copy;
+#[cfg(target_os = "linux")]
+use copy::tree as copy_tree;
+#[cfg(not(target_os = "linux"))]
+fn copy_tree(_: &Path, _: &Path, _: &Budget, _: Instant) -> Result<(), Failure> {
+    Err(Failure::UnsupportedPlatform)
+}
 pub struct IsolatedProject {
     root: PathBuf,
-    base: PathBuf,
+    base: tempfile::TempDir,
 }
 impl IsolatedProject {
     pub fn root(&self) -> &Path {
         &self.root
     }
     pub fn tool_home(&self) -> PathBuf {
-        self.base.join("tool-home")
+        self.base.path().join("tool-home")
     }
     pub fn copy(
         source: &Path,
         allowed_roots: &[PathBuf],
         budget: &Budget,
     ) -> Result<Self, Failure> {
+        budget.validate()?;
+        let started = Instant::now();
         let source = source
             .canonicalize()
             .map_err(|e| Failure::Input(e.to_string()))?;
@@ -186,24 +243,18 @@ impl IsolatedProject {
         {
             return Err(Failure::Input("project outside allowed roots".into()));
         }
-        let root = std::env::temp_dir().join(format!(
-            "archguard-isolated-{}-{}",
-            std::process::id(),
-            NEXT.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&root).map_err(|e| Failure::Input(e.to_string()))?;
-        let base = root;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&base, fs::Permissions::from_mode(0o700))
-                .map_err(|e| Failure::Input(e.to_string()))?;
+        if started.elapsed() >= budget.timeout {
+            return Err(Failure::Timeout);
         }
+        let base = tempfile::Builder::new()
+            .prefix("archguard-isolated-")
+            .tempdir()
+            .map_err(|e| Failure::Input(e.to_string()))?;
         let result = Self {
-            root: base.join("project"),
+            root: base.path().join("project"),
             base,
         };
-        for ancestor in result.base.ancestors() {
+        for ancestor in result.base.path().ancestors() {
             for file in [".cargo/config", ".cargo/config.toml"] {
                 match fs::symlink_metadata(ancestor.join(file)) {
                     Ok(_) => {
@@ -218,77 +269,12 @@ impl IsolatedProject {
         }
         fs::create_dir(result.root()).map_err(|e| Failure::Input(e.to_string()))?;
         fs::create_dir(result.tool_home()).map_err(|e| Failure::Input(e.to_string()))?;
-        let mut state = CopyState {
-            budget,
-            bytes: 0,
-            files: 0,
-        };
-        state.copy(&source, result.root(), 0)?;
+        copy_tree(&source, result.root(), budget, started)?;
         validate_manifests(result.root(), result.root())?;
+        if started.elapsed() >= budget.timeout {
+            return Err(Failure::Timeout);
+        }
         Ok(result)
-    }
-}
-impl Drop for IsolatedProject {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.base);
-    }
-}
-struct CopyState<'a> {
-    budget: &'a Budget,
-    bytes: u64,
-    files: usize,
-}
-impl CopyState<'_> {
-    fn copy(&mut self, from: &Path, to: &Path, depth: usize) -> Result<(), Failure> {
-        if depth > self.budget.depth {
-            return Err(Failure::Input("input depth budget exceeded".into()));
-        }
-        for entry in fs::read_dir(from).map_err(|e| Failure::Input(e.to_string()))? {
-            let entry = entry.map_err(|e| Failure::Input(e.to_string()))?;
-            if entry.file_name() == ".git" || entry.file_name() == "target" {
-                continue;
-            }
-            self.files += 1;
-            if self.files > self.budget.files {
-                return Err(Failure::Input("input entry budget exceeded".into()));
-            }
-            let ty = entry
-                .file_type()
-                .map_err(|e| Failure::Input(e.to_string()))?;
-            let dest = to.join(entry.file_name());
-            if ty.is_dir() {
-                fs::create_dir(&dest).map_err(|e| Failure::Input(e.to_string()))?;
-                self.copy(&entry.path(), &dest, depth + 1)?;
-            } else if ty.is_file() {
-                // O_NOFOLLOW prevents a final-component symlink swap during copy.
-                let mut options = fs::OpenOptions::new();
-                options.read(true);
-                #[cfg(unix)]
-                {
-                    use std::os::unix::fs::OpenOptionsExt;
-                    options.custom_flags(libc::O_NOFOLLOW);
-                }
-                let file = options
-                    .open(entry.path())
-                    .map_err(|e| Failure::Input(e.to_string()))?;
-                let mut bytes = Vec::new();
-                file.take(self.budget.file_bytes + 1)
-                    .read_to_end(&mut bytes)
-                    .map_err(|e| Failure::Input(e.to_string()))?;
-                self.bytes = self.bytes.saturating_add(bytes.len() as u64);
-                if bytes.len() as u64 > self.budget.file_bytes
-                    || self.bytes > self.budget.total_bytes
-                {
-                    return Err(Failure::Input("input byte budget exceeded".into()));
-                }
-                fs::write(dest, bytes).map_err(|e| Failure::Input(e.to_string()))?;
-            } else {
-                return Err(Failure::Input(
-                    "symlink or special input file is unsupported".into(),
-                ));
-            }
-        }
-        Ok(())
     }
 }
 fn validate_manifests(root: &Path, dir: &Path) -> Result<(), Failure> {

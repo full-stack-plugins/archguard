@@ -112,3 +112,11 @@ Initial absent-API compile RED and a separate oversized external-context behavio
 
 
 Root accepted task3.4 local fixture-profile interoperability at1d6d1e3 after independent82tests+2probes, SG7writer tests, real source.bundle reconstruction and all15 raw artifact hashes; report archguard-sg-independent-review.md. Total9/25. Scope excludes production authentication, historical baseline Git proof and TestGuard execution; task3.1 and trusted-operation groups remain separate. New task1.4 work follows docs/superpowers/plans/2026-10-09-bounded-cargo-runner.md and is not accepted yet.
+
+
+## Task1.4 bounded fixed-tool Linux slice — pending independent review
+
+Behavioral RED reproduced escaped setsid descendant writing after timeout, invalid budgets reaching execution and copy ignoring deadline. The Linux runner now installs inherited process-group/namespace confinement, observes leader exit without reaping before group cleanup, limits cleanup wait, and validates all budgets before spawn/copy. Source traversal pins directory descriptors, rejects symlink/special inputs without blocking and enforces byte/count/depth/deadline checks during copy into private random temporary directories. Actual Cargo and controlled fake tool tests preserve source lockfiles and enhanced error versus legacy partial exits. ADR0006 precisely scopes Linux x86_64/aarch64 fixed trusted tools; no general hostile-tool OS sandbox or production authentication claim. Task1.4 remains unchecked until review; accepted count9/25.
+
+
+Task1.4 validation:91all-target tests pass on default Rust and official1.90, including15runner tests plus the pinned-directory replacement unit test; Clippy-Dwarnings, fmt/diff and strict OpenSpec pass. Exact RED/GREEN commands, final dependency archive verification and platform limitations are recorded in external archguard-runner-slice-report.md. No new dependency or MSRV increase. Task1.4 remains unchecked for independent review.
