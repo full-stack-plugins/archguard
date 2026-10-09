@@ -216,6 +216,26 @@ fn approve_obligations(
         .unwrap();
     (approved, policy, authority)
 }
+fn capture(
+    label: &str,
+    analysis: &archguard::analysis::java::JavaAnalysis,
+    result: &DomainEvaluation,
+) {
+    if let Some(directory) = std::env::var_os("ARCHGUARD_DOMAIN_EVIDENCE_DIR") {
+        let directory = std::path::PathBuf::from(directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        std::fs::write(
+            directory.join(format!("{label}.json")),
+            serde_json::to_vec_pretty(result).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            directory.join(format!("{label}.capture.tsv")),
+            analysis.capture(),
+        )
+        .unwrap();
+    }
+}
 fn verified(e: &DomainEvaluation) {
     assert_eq!(
         guardengine::evaluate(e.contract(), e.facts()).unwrap(),
@@ -239,6 +259,7 @@ fn actual_java_static_coordination_and_direct_state_access_follow_approved_contr
     verified(&result);
     assert_eq!(result.report().decision, Decision::Allow);
     assert!(result.findings().is_empty());
+    capture("legal-static", &legal, &result);
     let bad = compile(true);
     let analysis = tools().analyze(&bad.0, &profile()).unwrap();
     let result = contract
@@ -256,6 +277,7 @@ fn actual_java_static_coordination_and_direct_state_access_follow_approved_contr
             .contains("captures")
     );
     assert_eq!(result.test_obligations().len(), 2);
+    capture("forbidden-static", &analysis, &result);
     let (weakened, weak_policy, weak_authority) = approve_obligations(
         &contract,
         BTreeSet::from([contract.required_obligations().first().unwrap().clone()]),
@@ -315,6 +337,7 @@ fn transitions_remain_unknown_and_heuristic_rules_do_not_become_enforce() {
     );
     assert_eq!(result.report().decision, Decision::Block);
     assert!(result.findings().is_empty());
+    capture("transition-gap", &analysis, &result);
     let advisory = model(Enforcement::Review, InvariantKind::HeuristicStateAccess);
     let (b, p, a) = approve(&advisory);
     let result = advisory.evaluate_java(&analysis, &b, &p, &a, 50).unwrap();
