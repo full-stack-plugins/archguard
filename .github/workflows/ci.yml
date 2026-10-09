@@ -38,3 +38,14 @@ jobs:
       - name: Test
         run: cargo test --all-targets
         working-directory: archguard
+      - name: Diagnose denied Git process in isolated fixture
+        if: failure()
+        working-directory: archguard
+        run: |
+          set +e
+          strace -f -e trace=process,network -o "$RUNNER_TEMP/archguard-git-process.trace" \
+            cargo test --locked --offline --test attempt_concurrency \
+            late_old_allow_cannot_replace_new_block_for_actual_git_candidates -- --exact
+          fixture_status=$?
+          tail -n 160 "$RUNNER_TEMP/archguard-git-process.trace"
+          exit "$fixture_status"
