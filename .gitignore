@@ -1,0 +1,7 @@
+/target/
+/.DS_Store
+*.log
+/fixtures/**/Cargo.lock
+/fixtures/**/target/
+/facts.json
+/evidence.json

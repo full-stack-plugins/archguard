@@ -1,0 +1,29 @@
+name: ArchGuard CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: archguard
+      # Temporary sibling-source dependency. Replace with pinned package when released.
+      - uses: actions/checkout@v4
+        with:
+          repository: full-stack-plugins/guardengine
+          path: guardengine
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+        working-directory: archguard
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: archguard
+      - name: Test
+        run: cargo test --all-targets
+        working-directory: archguard
