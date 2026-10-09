@@ -145,6 +145,12 @@ impl ArchitectureBaseline {
         next.rehash()?;
         Ok(next)
     }
+    pub fn source_ref(&self) -> &str {
+        &self.content.source_ref
+    }
+    pub fn binding(&self) -> &RunBinding {
+        &self.content.binding
+    }
     pub fn state(&self) -> ArchitectureBaselineState {
         self.state
     }

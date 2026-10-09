@@ -5,3 +5,5 @@ pub mod rules;
 pub mod baseline;
 
 pub mod contracts;
+
+pub mod diff;

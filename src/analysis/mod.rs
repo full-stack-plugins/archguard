@@ -148,3 +148,5 @@ impl PreparedAnalysis {
 pub mod java;
 
 pub mod typescript;
+
+pub mod codegraph;
