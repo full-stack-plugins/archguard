@@ -43,3 +43,6 @@ impl Drop for Temp {
         let _ = std::fs::remove_dir_all(&self.0);
     }
 }
+
+#[allow(dead_code)]
+pub mod evidence;

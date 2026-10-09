@@ -40,6 +40,13 @@ impl FrozenAnalysisProfile {
         .expect("string serialization is infallible")
     }
 
+    pub(crate) fn members(&self) -> &BTreeSet<String> {
+        &self.required_members
+    }
+    pub(crate) fn relations(&self) -> &BTreeSet<String> {
+        &self.required_relations
+    }
+
     pub fn coverage_gaps(&self, observed: &BTreeSet<String>) -> Vec<String> {
         let mut gaps: Vec<_> = self
             .required_members

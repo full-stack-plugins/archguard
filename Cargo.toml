@@ -3,12 +3,15 @@ name = "archguard"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Architecture dependency analysis for Partme Guard"
+description = "ArchGuard architecture declaration analysis and candidate-bound evidence"
 license = "Apache-2.0"
 
 [dependencies]
 guardengine = { path = "../guardengine" }
 serde_json = "1"
+serde = { version = "=1.0.229", features = ["derive"] }
+time = { version = "=0.3.44", features = ["formatting"] }
+tempfile = "=3.25.0"
 sha2 = "0.10"
 
 # Fixed parser/process boundary dependencies for the declaration runner.
