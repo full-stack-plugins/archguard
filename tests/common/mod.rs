@@ -46,3 +46,6 @@ impl Drop for Temp {
 
 #[allow(dead_code)]
 pub mod evidence;
+
+#[allow(dead_code)]
+pub mod spec_trace;

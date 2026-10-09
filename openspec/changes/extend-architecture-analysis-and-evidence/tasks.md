@@ -66,9 +66,9 @@
 **Interfaces:** FrozenBinding + ProducerProfile + FrozenCoverage + domain outcome → standalone envelope + allowed-storage artifact refs；engine-backed completed decision 等于报告。尚未绑定则只产生 transport diagnostic。
 
 - [x] 4.1 在 `src/integration/projection.rs` 按 GE-CONTRACT golden 实现独立 strict envelope 与领域 artifact 映射（Requirement: Separate Versioned Architecture Evidence）；`tests/integration_schema.rs` 检查未知版本/字段、报告摘要或 decision 不同均拒绝，当前 GuardFacts/GuardReport schema 原样保留，无隐含 N/N-1。
-- [ ] 4.2 在 `src/integration/evidence.rs` 实现 pre-binding diagnostic 与绑定后 completed/error/cancelled（Requirement: Bound Execution State and Diagnostics）；`tests/execution_state.rs` 验证缺 OID 无 envelope、工具失败/取消 null decision、有效 partial 为 BLOCK、旧输出不可冒充当前结果，并回归 legacy metadata partial 行为。
+- [x] 4.2 在 `src/integration/evidence.rs` 实现 pre-binding diagnostic 与绑定后 completed/error/cancelled（Requirement: Bound Execution State and Diagnostics）；`tests/execution_state.rs` 验证缺 OID 无 envelope、工具失败/取消 null decision、有效 partial 为 BLOCK、旧输出不可冒充当前结果，并回归 legacy metadata partial 行为。
 - [ ] 4.3 在 `src/integration/binding.rs` 定义全量 immutable binding、attempt runId、dedup key 与 compare-and-set 发布（Requirement: Immutable Candidate Isolation and Invalidation）；`tests/candidate_binding.rs` 模拟两个 requirement、重复尝试、迟到旧完成，断言 runId 独立、相同提取可缓存但不能跨义务/候选满足。
-- [ ] 4.4 在 `src/integration/binding.rs` 消费 GitGuard 的只读候选解析并绑定实际对象格式（Requirement: Immutable Candidate Isolation and Invalidation）；`tests/candidate_binding.rs` 覆盖 synthetic queue candidate、base/成员变化和不同对象格式，旧 head/旧 queue 报告均不能满足新候选；不新增 Git 写权限。
+- [x] 4.4 在 `src/integration/binding.rs` 消费 GitGuard 的只读候选解析并绑定实际对象格式（Requirement: Immutable Candidate Isolation and Invalidation）；`tests/candidate_binding.rs` 覆盖 synthetic queue candidate、base/成员变化和不同对象格式，旧 head/旧 queue 报告均不能满足新候选；不新增 Git 写权限。
 - [ ] 4.5 在 `src/integration/evidence.rs` 发布 AG-EVIDENCE artifact 集合和 explicit capability profile（Requirement: Separate Versioned Architecture Evidence）；`tests/integration_schema.rs` 用 GitGuard/FlowGuard 消费 fixture 验证 missing coverage/artifact、未支持 domain capability 不降级通过，收录真实 contract/facts/report/domain 摘要引用。
 
 ## 5. Trusted Operation, Interfaces and Release — GE-TRUST / GE-RELEASE 按阶段进入

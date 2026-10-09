@@ -9,6 +9,7 @@ license = "Apache-2.0"
 [dependencies]
 guardengine = { path = "../guardengine" }
 gitguard = { path = "../gitguard", version = "=0.1.0" }
+specguard = { path = "../specguard", version = "=0.1.0" }
 serde_json = "1"
 serde = { version = "=1.0.228", features = ["derive"] }
 time = { version = "=0.3.44", features = ["formatting"] }

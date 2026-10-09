@@ -66,6 +66,14 @@ impl GitCargoEvidence {
         candidate: &CandidateSnapshot,
         policy: ProtectedCargoPolicy,
     ) -> Result<Self, TransportDiagnostic> {
+        Self::prepare_with_identity(repo, candidate, policy, vec![])
+    }
+    pub(crate) fn prepare_with_identity(
+        repo: &Repository,
+        candidate: &CandidateSnapshot,
+        policy: ProtectedCargoPolicy,
+        extra_identity: Vec<(String, Vec<u8>)>,
+    ) -> Result<Self, TransportDiagnostic> {
         check(repo, candidate)?;
         if policy.profile_digest().strip_prefix("sha256:") != Some(candidate.policy_digest()) {
             return Err(diagnostic(
@@ -81,27 +89,25 @@ impl GitCargoEvidence {
             .materialize_files(root.path())
             .map_err(|_| diagnostic("source.invalid", "candidate source materialization failed"))?;
         let object_format = repo.object_format().to_owned();
-        let analysis = PreparedAnalysis::prepare_bound(
-            root.path(),
-            &policy.profile,
-            vec![
-                (
-                    identity_key(candidate),
-                    bytes(&(candidate, &object_format))
-                        .map_err(|_| diagnostic("candidate.invalid", "invalid candidate"))?,
-                ),
-                (
-                    format!("gitguard.files:{files_digest}"),
-                    files_digest.as_bytes().to_vec(),
-                ),
-            ],
-        )
-        .map_err(|_| {
-            diagnostic(
-                "source.unresolved",
-                "candidate Cargo source preparation failed",
-            )
-        })?;
+        let mut identity = vec![
+            (
+                identity_key(candidate),
+                bytes(&(candidate, &object_format))
+                    .map_err(|_| diagnostic("candidate.invalid", "invalid candidate"))?,
+            ),
+            (
+                format!("gitguard.files:{files_digest}"),
+                files_digest.as_bytes().to_vec(),
+            ),
+        ];
+        identity.extend(extra_identity);
+        let analysis = PreparedAnalysis::prepare_bound(root.path(), &policy.profile, identity)
+            .map_err(|_| {
+                diagnostic(
+                    "source.unresolved",
+                    "candidate Cargo source preparation failed",
+                )
+            })?;
         if analysis.files_digest() != files_digest {
             return Err(diagnostic(
                 "source.mismatch",
@@ -167,6 +173,19 @@ impl GitEvidenceBundle {
             return Err("Git bundle budget exceeded".into());
         }
         #[derive(Deserialize)]
+        struct Parsed(
+            #[serde(deserialize_with = "GitEvidenceBundle::deserialize_unverified")]
+            GitEvidenceBundle,
+        );
+        let Parsed(result) =
+            serde_json::from_slice(input).map_err(|_| "invalid Git evidence bundle")?;
+        result.verify(repo, expected)?;
+        Ok(result)
+    }
+    pub(crate) fn deserialize_unverified<'de, D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
         struct Wire {
             api_version: String,
@@ -175,17 +194,14 @@ impl GitEvidenceBundle {
             files_digest: String,
             cargo: EvidenceBundle,
         }
-        let wire: Wire =
-            serde_json::from_slice(input).map_err(|_| "invalid Git evidence bundle")?;
-        let result = Self {
+        let wire = Wire::deserialize(deserializer)?;
+        Ok(Self {
             api_version: wire.api_version,
             candidate: wire.candidate,
             object_format: wire.object_format,
             files_digest: wire.files_digest,
             cargo: wire.cargo,
-        };
-        result.verify(repo, expected)?;
-        Ok(result)
+        })
     }
     pub fn verify(&self, repo: &Repository, expected: &CandidateSnapshot) -> Result<(), String> {
         check(repo, expected).map_err(|_| "expected Git candidate invalid")?;
