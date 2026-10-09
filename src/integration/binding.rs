@@ -213,24 +213,34 @@ impl GitEvidenceBundle {
         {
             return Err("Cargo binding differs from Git candidate".into());
         }
-        if files(repo, expected)
-            .map_err(|_| "candidate files unavailable")?
-            .digest()
-            != self.files_digest
-        {
+        let file_inventory = files(repo, expected).map_err(|_| "candidate files unavailable")?;
+        if file_inventory.digest() != self.files_digest {
             return Err("Git file digest mismatch".into());
         }
         if self.cargo.envelope.run_status == RunStatus::Completed {
             let domain: CargoDomain =
                 serde_json::from_value(self.cargo.domain.clone().ok_or("missing domain")?)
                     .map_err(|_| "invalid domain")?;
-            for key in [
-                identity_key(expected),
-                format!("gitguard.files:{}", self.files_digest),
-            ] {
-                if !domain.inventory_keys.contains(&format!("identity:{key}")) {
-                    return Err("Git source identity absent from Cargo inventory".into());
-                }
+            let declared_files = domain
+                .inventory_keys
+                .iter()
+                .filter(|key| key.starts_with("file:"))
+                .map(String::as_str);
+            if !declared_files.eq(file_inventory.keys()) {
+                return Err("Cargo file inventory differs from actual candidate tree".into());
+            }
+            // Reserve the entire GitGuard namespace. Presence checks would
+            // allow a second contradictory candidate or file identity.
+            let expected_git_keys = [
+                format!("identity:{}", identity_key(expected)),
+                format!("identity:gitguard.files:{}", self.files_digest),
+            ];
+            let declared_git_keys = domain
+                .inventory_keys
+                .iter()
+                .filter(|key| key.starts_with("identity:gitguard"));
+            if !declared_git_keys.eq(expected_git_keys.iter()) {
+                return Err("Cargo Git identity inventory differs from expected binding".into());
             }
         }
         Ok(())

@@ -307,3 +307,63 @@ fn actual_two_parent_queue_merge_differs_from_member_head() {
     assert!(result.verify(&repo, &member).is_err());
     assert_eq!(result.cargo().envelope.binding.candidate_oid, queue);
 }
+
+#[test]
+fn review_domain_file_inventory_must_match_actual_candidate_files() {
+    use archguard::integration::binding::GitEvidenceBundle;
+    use sha2::{Digest, Sha256};
+    let (dir, base, candidate) = fixture("sha1");
+    let repo = Repository::discover(dir.0.as_path(), "repo").unwrap();
+    let p = policy();
+    let s = snapshot(&repo, &base, &candidate, &p);
+    let bundle = GitCargoEvidence::prepare(&repo, &s, p)
+        .unwrap()
+        .run(&AtomicBool::new(false))
+        .unwrap();
+    let original = serde_json::to_value(&bundle).unwrap();
+    GitEvidenceBundle::load(&serde_json::to_vec(&original).unwrap(), &repo, &s).unwrap();
+    let mut contradictions = vec![];
+    for alteration in [
+        "missing-file",
+        "foreign-file",
+        "foreign-git-binding",
+        "foreign-git-files",
+        "foreign-git-namespace",
+    ] {
+        let mut v = original.clone();
+        let keys = v["cargo"]["domain"]["inventory_keys"]
+            .as_array_mut()
+            .unwrap();
+        match alteration {
+            "missing-file" => keys.retain(|k| k.as_str() != Some("file:Cargo.toml")),
+            "foreign-file" => keys.push(serde_json::json!("file:never-in-candidate")),
+            "foreign-git-binding" => keys.push(serde_json::json!(format!(
+                "identity:gitguard.binding:{}",
+                "f".repeat(64)
+            ))),
+            "foreign-git-files" => keys.push(serde_json::json!(format!(
+                "identity:gitguard.files:sha256:{}",
+                "f".repeat(64)
+            ))),
+            _ => keys.push(serde_json::json!("identity:gitguard.unexpected")),
+        }
+        keys.sort_by(|a, b| a.as_str().cmp(&b.as_str()));
+        let digest = format!(
+            "{:x}",
+            Sha256::digest(serde_json::to_vec(&v["cargo"]["domain"]).unwrap())
+        );
+        v["cargo"]["envelope"]["artifacts"]["domain"][0]["digest"] =
+            serde_json::json!(format!("sha256:{digest}"));
+        v["cargo"]["envelope"]["artifacts"]["domain"][0]["uri"] =
+            serde_json::json!(format!("artifact://archguard/domain/{digest}"));
+        let accepted = GitEvidenceBundle::load(&serde_json::to_vec(&v).unwrap(), &repo, &s).is_ok();
+        eprintln!("{alteration}: accepted={accepted}");
+        if accepted {
+            contradictions.push(alteration);
+        }
+    }
+    assert!(
+        contradictions.is_empty(),
+        "accepted contradictory inventories: {contradictions:?}"
+    );
+}
