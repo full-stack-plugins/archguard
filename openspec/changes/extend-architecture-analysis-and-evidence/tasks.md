@@ -54,7 +54,7 @@
 **Surfaces:** 拟新增 `src/domain/{baseline,contracts,diff}.rs`、`src/analysis/codegraph.rs`、`tests/{baseline,domain_contracts,design_diff}.rs`。
 **Interfaces:** authenticated external baseline reference → ArchitectureBaseline；baseline + candidate observation → contract findings、TestObligation refs、DesignDiff。基线 authority 为外部输入，不由本域创建审批。
 
-- [ ] 3.1 在 `src/domain/baseline.rs` 实现不可变 source/ADR/contract 摘要及 draft/in_review/approved/superseded/revoked 状态（Requirement: Immutable Architecture Baseline）；`tests/baseline.rs` 验证候选改写 accepted/approved=true 不覆盖旧 baseline、修订产生新 digest，批准删除义务也必须有新外部认证记录。
+- [x] 3.1 在 `src/domain/baseline.rs` 实现不可变 source/ADR/contract 摘要及 draft/in_review/approved/superseded/revoked 状态（Requirement: Immutable Architecture Baseline）；`tests/baseline.rs` 验证候选改写 accepted/approved=true 不覆盖旧 baseline、修订产生新 digest，批准删除义务也必须有新外部认证记录。
 - [ ] 3.2 在 `src/domain/contracts.rs` 定义 Context/Aggregate/Invariant/Transition 与测试义务映射（Requirement: Approved Domain Object and Method Contracts）；`tests/domain_contracts.rs` 验证合法 AppService 协调与绕过状态入口，只有批准确定规则可阻断，输出义务不声称已执行 TestGuard 测试。
 - [ ] 3.3 在 `src/domain/contracts.rs` 加入 Object API/可见性/依赖及 Method signature/side-effect 契约（Requirement: Approved Domain Object and Method Contracts）；`tests/domain_contracts.rs` 验证所有权迁移、纯度/IO 和错误传播的合法/违规/缺覆盖三类，启发式长度/名称建议只 review/advise。
 - [x] 3.4 在 `src/domain/baseline.rs` 和拟新增 `src/integration/trace.rs` 消费 SG-BASELINE 的 Requirement/ADR/TestObligation 稳定引用（Requirement: Immutable Architecture Baseline）；`tests/baseline.rs` 验证失效/缺失/跨 requirement 引用被拒绝且 basic Cargo scan 不依赖 SpecGuard 可用性；该互操作部分等待 SG-BASELINE 和 GE-CONTRACT/ADAPTER。
