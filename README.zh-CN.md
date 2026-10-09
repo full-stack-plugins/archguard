@@ -100,3 +100,5 @@ SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 是六个�
 库接口现已增加固定 OpenJDK 21 的静态字节码适配器，已通过受限静态 profile 独立审查。它保留必需类型范围、重载描述符与真实 native capture 来源；反射和动态行为仍标记为未知。详见[能力矩阵](docs/analyzer-capabilities.md)与[JDK 决策](docs/decisions/0007-fixed-jdk-classfile-provider.md)。原有 CLI 仍面向 Cargo。
 
 固定 TypeScript5.9.3 compiler API 适配器已实现，待独立审查。它支持受保护 paths 别名、跨包声明来源和重载签名；project references 明确拒绝，动态导入与缺失来源保持缺覆盖，不宣称运行时调用完整性。
+
+既有进程内候选尝试隔离已独立验收（4.3）：完整绑定、独立 run ID 与 compare-and-set 发布可拒绝跨需求复用及迟到结果覆盖。它只保证元数据一致性，不提供生产者认证或合并权。详见[实施进度](docs/implementation-progress.md)；另行提出的新架构计划仍待确认。
