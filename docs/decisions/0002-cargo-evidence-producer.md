@@ -1,6 +1,6 @@
 # Decision0002 — independent Cargo declaration evidence producer
 
-Status: implemented local library profile, awaiting independent review for4.1/4.2. Legacy CLI remains unchanged. The current profile covers Cargo declaration metadata, not active build features, source-language symbols, an approved architecture baseline or authenticated Git admission.
+Status: restricted local library profile independently accepted for 4.1 at 01f2f13; 4.2 remains partial for missing Git object/source verification. Legacy CLI remains unchanged. The current profile covers Cargo declaration metadata, not active build features, source-language symbols, an approved architecture baseline or authenticated Git admission.
 
 `ProtectedCargoPolicy::freeze(contract, required_members)` takes an owned controller-selected policy before extraction. It does not authenticate the caller. It caps rule count256, contract128KiB, required members1024 and member/relation identifiers256bytes before constructing expanded scope sets. Required members include rule endpoints; missing endpoints and unsupported relations remain partial, never an empty-graph success. The profile digest includes actual contract and complete required members/relations; coverage has explicit profile/member/relation scopes. Candidate configuration cannot shrink them.
 
