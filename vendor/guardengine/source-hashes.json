@@ -1,0 +1,22 @@
+{
+  "commit": "a47ae91811f2f31f9d6438f382affbccd9cf4426",
+  "files": {
+    "Cargo.toml": "91e8a1fc5c5fc6c8802264dea1616d5be76835ec359379a542e5efa8e4d5c46a",
+    "src/analyzer.rs": "50919f1e462da568484ff7a5bc94deb91fbdcea932e53fd3f212b49d916b291e",
+    "src/engine.rs": "346cbc4d316b909311fcd00c0f0129eb4e0aec2942c5dbcbebf9eec15c9a6d0b",
+    "src/error.rs": "aee9704ea5aec3344210c5ec82f4a77532eafe5fdd1078dccc8d03d4c101429b",
+    "src/integration/adapter.rs": "549803ee5219441d221cf467420e468c96ecf2267b622f68b85a6f39f8e8a91c",
+    "src/integration/attempt.rs": "4a73ca69172a76642e52054c2abb09414070d62917f6128d409fd5d993b6cc69",
+    "src/integration/attempt_store.rs": "8dd2c5db448eeb44e5393bb95fed5f7b81ece0c31e3c1f2fb1166c302427f726",
+    "src/integration/eligibility.rs": "6caacaf4b874d3ccc87d9fec5bf6a35c73e50f9ce9f8ac862c2e3de26edb5f5b",
+    "src/integration/fact_budget.rs": "775e63a6c4cd2c8fc46ddf668402df3fa1d5c9a5c1ca7651a6a016a6902e580f",
+    "src/integration/mod.rs": "72df9f4003a1e5fe62981d6e0c2af2f02222b8f1701082af11c5e6648241fd8c",
+    "src/integration/model.rs": "b603d1c4f469d92ed13d5dda51f35428fcd73f485a6b78db632e22347d566485",
+    "src/integration/publication.rs": "bbbc3aeec153d521c4082393efd02283efc9679df4e553987f1f6b8f98968614",
+    "src/integration/validation.rs": "9d101d569150a2755166253970af2881d969b6a57f407e4313f3505d630da25c",
+    "src/integration/yaml_validation.rs": "a080091d74ff4381f901f4cdf7bc8854f767aaf7ab0816097bf98e61959a75ff",
+    "src/lib.rs": "0a7e2aec0e651a187d461a9b66916171d80be68378104b8828a5ae5b953360f6",
+    "src/main.rs": "e4b32732adc43039d5ac25d99a74dd93fd075fd5d08507602220c6e5498a696d",
+    "src/protocol.rs": "3ffca2f809acbaaaba592e007d06852a0ea38d625d763d281c0f41df88090835"
+  }
+}
