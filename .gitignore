@@ -5,3 +5,5 @@
 /fixtures/**/target/
 /facts.json
 /evidence.json
+
+/fixtures/languages/typescript/node_modules/

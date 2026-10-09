@@ -1,0 +1,6 @@
+{
+  "name": "archguard-typescript-capability-evaluation",
+  "private": true,
+  "scripts": { "test": "node evaluate.cjs" },
+  "devDependencies": { "typescript": "5.9.3" }
+}
