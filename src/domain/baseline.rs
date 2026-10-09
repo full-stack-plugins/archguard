@@ -285,3 +285,6 @@ impl ArchitectureTrace {
         Ok(format!("specguard.trace:{}", self.digest()?))
     }
 }
+
+mod lifecycle;
+pub use lifecycle::{ArchitectureBaseline, ArchitectureBaselineState};
