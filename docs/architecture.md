@@ -10,9 +10,11 @@ ArchGuard 是独立的**架构约束验证工具**：让编程 Agent 在已有�
 
 **不拥有**：需求基线（SpecGuard）、普通 lint/security 规则（CodeGuard）、真实测试执行与覆盖（TestGuard）、Git 分支/合入（GitGuard）、阶段审批（FlowGuard）、通用协议/规则计算/证据框架（GuardEngine）。
 
+本生态由 SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 六个独立守卫与 GuardEngine 组成；不存在 GuardCore。图中的领域解析与规则编排属于 ArchGuard，不迁入引擎。
+
 架构设计“符合已批准约束”不等于“设计是唯一或最优的”：可检查关系为 **ENFORCE**；职责归属争议、抽象合理性、演进成本等需基于事实进入 **REVIEW**；无需立即处理的优化为 **ADVISE**。自然语言启发式评分不得变成自动强制阻断。
 
-## 2. 产品总体架构
+## 2. 产品总体架构（目标，不代表当前全部实现）
 
 ~~~text
      Approved ADR / Architecture Contract / Domain Invariants
@@ -72,7 +74,7 @@ ArchGuard 是独立的**架构约束验证工具**：让编程 Agent 在已有�
 2. 识别实际 workspace_members；以规范化目录定位成员包；
 3. 从成员包的声明中提取 **path 指向另一成员** 的直接依赖；
 4. 生成中立关系事实 `(subject, depends_on, object, source)`，例如 `agent-job → agent-saas`；
-5. 把读取的 Cargo.toml 内容规范化哈希为 `snapshotDigest`（**不是完整 Git Tree/Commit**）；
+5. 把读取的 Cargo.toml 原始字节按路径稳定排序后哈希为 `snapshotDigest`（**不是完整 Git Tree/Commit**）；
 6. 通过 GuardEngine 载入合同并执行 `forbid_relation`，输出 JSON 报告与 CLI 退出码。
 
 CLI 和示例见 [README](../README.md) 与 [测试](../tests/integration.rs)。该原型无 Rust use/函数级语义、无 Java/TS 静态索引、无可信签名/用户审批。依赖 `../guardengine` 是临时本地 path 依赖，需改为带版本的不可变发布包。
@@ -85,7 +87,7 @@ CLI 和示例见 [README](../README.md) 与 [测试](../tests/integration.rs)。
 
 可信合并需要：受保护规则版本、当前最终候选 SHA/Tree、独立分析器执行、匹配签名/权限、required CI 和 GitGuard 最终版本核验。**本地 unsigned report 只对开发者提供指导，不能给 Agent 直接合入权限。**
 
-## 6. 与其他组件的协议
+## 6. 与其他组件的协议（目标集成）
 
 - GuardEngine：纯粹通用规则、契约及证据模型，不能导入 ArchGuard 领域代码。
 - SpecGuard：提供已批准的 Requirement 和 ADR 关联，不评价架构实现。
@@ -93,8 +95,8 @@ CLI 和示例见 [README](../README.md) 与 [测试](../tests/integration.rs)。
 - TestGuard：执行状态机、不变量及消费者契约测试，回传对同一候选的证据。
 - GitGuard：提供候选变更集、分支基线和符号冲突观察，保证最终候选重新验证。
 - FlowGuard：管理架构评审、例外与下一阶段审批，不代替架构检查。
-- CodeGraph/codegraph-plugin：提供索引及引用/调用关系，索引版本和覆盖缺口必须同时传递。
-- codereview-plugin：提交 DESIGN REVIEW/ADVISE 建议，不能自行变更批准 ADR。
+- CodeGraph/codegraph-plugin（未检查的外部兼容目标）：提供索引及引用/调用关系，索引版本和覆盖缺口必须同时传递。
+- codereview-plugin（未检查的外部兼容目标）：提交 DESIGN REVIEW/ADVISE 建议，不能自行变更批准 ADR。
 
 ## 7. Architecture Fitness Functions 与 Design Diff
 
@@ -124,3 +126,45 @@ CodeGraph/SCIP 的索引不完整时显示“本次影响分析无法覆盖哪�
 技术模块、DSL/CLI、错误和测试设计见 [技术方案](technical-design.md)。
 
 **注意：只有 A0 有当前实现支撑，后续均为 OpenSpec/代码实施目标。**
+
+## 10. 审阅基线、当前领域模型和使用场景
+
+本次审阅基于 main `566fda92c7186a38e53ac81347ba23e0a8107443`（2026-10-09）。证据来自 [Cargo.toml](../Cargo.toml)、[分析器](../src/lib.rs)、[CLI](../src/main.rs)、[五个集成测试](../tests/integration.rs)、[CI](../.github/workflows/ci.yml) 和 [OpenSpec](../openspec/changes/add-cargo-workspace-guard/specs/cargo-architecture/spec.md)。文档版本、crate 版本、wire apiVersion 与合同 revision 是不同版本维度。现有 OpenSpec 只承诺 Cargo 原型，A1–A5 尚需新规格与实现。
+
+| 场景 | 输入与输出 | 当前判定边界 |
+|---|---|---|
+| 开发者检查新增成员依赖 | 本地项目目录 + 合同 YAML → 事实/报告 JSON | 只检查声明的直接成员 path 边 |
+| CI 审阅 `agent-job → agent-saas` | 同一示例合同 + forbidden fixture | `source=agent-job/Cargo.toml`，enforce 得到 BLOCK |
+| 项目存在但缺清单 | 可规范化目录 + 合同 → partial 事实 | 空 facts、有诊断；每条规则 INDETERMINATE，BLOCK |
+| 包/方法设计迁移 | 批准基线 + 候选图 + 不变量测试义务 | 目标 Design Diff，当前无法检查 |
+| 多任务同时修改公共 API | 不同 task/worktree 的候选与消费关系 | 目标独立绑定和合并候选再检查，不直接授予合入权 |
+
+当前领域实体只有工作区成员包、声明依赖边、清单来源与分析运行；没有持久化架构数据库或审批记录。内存 `HashMap<canonical directory, package name>` 用于验证依赖目标身份，`BTreeMap<path, manifest bytes>` 用于摘要，事实是排序去重的四元组。`GuardFacts.subject.id` 是调用者传入的 `--project` 字符串，并非仓库 ID；`analyzer.id=archguard.cargo.workspace`，version 来自 crate。目标 Context/Aggregate/Type/Method 模型均不能通过在现有 JSON 中添加字段来实现。
+
+### 当前能力的关键反例
+
+- metadata 的成员声明含普通、dev、build、optional、target 条件依赖时均按相同边抽取；没有按目标平台/feature 求值，也没有保存 dependency kind。重复边合并后丢失声明类型区别。
+- 使用 dependency path 的规范化目录匹配成员，不能仅靠依赖名称猜边；registry/git 依赖和非成员本地边不进入结果。对已出现的 path 仍会先 canonicalize，因此不可访问的路径可令整个提取 partial。
+- 无通配符、图遍历、循环检查、层级 DSL、Rust `use` 分析。精确禁边若指向不存在的包，也可能无匹配而 PASS。引擎不验证规则是否覆盖已分析成员；“没有发现”不是“该义务适用且完整验证”。
+- `complete` 是成功运行该分析器的有限范围声明，不是完整源码/运行时覆盖保证。元数据成功但没有成员边也是完整空事实。
+- 路径在根目录内时为相对路径，根目录外会保留路径；没有强制 workspace containment。大小写、Unicode 与平台路径差异没有跨平台统一身份策略。
+
+## 11. 目标基线、审批与运行状态机
+
+批准的 ArchitectureBaseline 应引用不可变合同摘要、规则集版本、ADR 内容摘要/不可变 ref、覆盖配置与审批记录。自然语言文件上的“accepted”或 `approved: true` 不是认证证据。ArchGuard 定义架构例外的范围和到期语义，受信控制器验证审批人的身份/权限/范围/新鲜度；GuardEngine 不签发审批。
+
+目标基线生命周期：`draft → in_review → approved → superseded/revoked`；修订内容生成新摘要、新审批，不能原地修改 approved 基线。例外仅针对明确候选、规则与证据，不能授权跳过 partial、工具错误或未知的必需分析能力。
+
+目标执行生命周期：`queued → running → completed | error | cancelled`。只有 completed 才持有技术 decision；error/cancelled 不伪造 ALLOW，控制器保持门禁未满足。completed + REQUIRE_APPROVAL 进入外部 review；审批通过后仍须确认原候选/基线/覆盖未变。当前 CLI 无队列、取消协议、持久状态或审批处理。
+
+以下变化使受影响结果及审批失效：candidate/base/merge-group、规则集、分析器版本或覆盖、批准基线 revision、审批过期或撤销。最终检查必须针对实际 merge-queue candidate，仅 branch/head 证据不足。并行任务采用 repo/task/worktree/requirement 与不可变候选绑定，旧任务迟到结果不得覆盖新候选状态；同绑定重试幂等保存证据，改变绑定创建新运行。技术 ALLOW 仅证明指定范围内满足规则，不是合并/发布权限。
+
+目标统一包装为 [GuardRunEnvelope 集成草案](integration-contract.md)，`guard.integration/v1alpha1` 与现有 `guard.partme.ai/v1alpha1` 分离。错误、取消、审批引用和 Git 绑定不塞进当前 GuardReport；当前 `deny_unknown_fields` 会拒绝新增字段。
+
+## 12. 运维、安全与待决策
+
+当前调用离线 Cargo metadata，没有自有网络服务、凭据、merge 或 approval API；离线不等于沙箱。Cargo/工具链选择、环境和配置会影响行为，进程没有超时/资源限制，外部路径可能被读取，Cargo 也可能创建/更新锁文件。现有输出使用普通覆盖写入，没有原子发布或输入路径保护。当前 manifest digest 也不覆盖这些影响因素。
+
+目标受信 runner 使用受保护合同、固定工具链、最小只读凭据、隔离临时副本与资源预算；不执行未信任的策略脚本。目录逃逸、超时、输出超额要返回明确诊断，不能删掉未知边后继续 ALLOW。审计保留原输入摘要、分析器/环境、覆盖缺口、匹配事实、审批撤销记录与候选绑定；敏感绝对路径和源码应按消费权限脱敏。
+
+待决策采用可回滚默认：先扩展独立 envelope 的覆盖声明，再版本化新的领域协议；先保存逐声明 dependency kind/target 信息再考虑启用图；Rust 深层分析器先选择一种可复现工具链做试点。跨语言 SymbolId、索引器许可/部署成本、默认保留期、签名身份与审批系统尚未定案。OPA 仅为可选未来适配器，不是当前协议接受任意 REGO 的承诺。
