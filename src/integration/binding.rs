@@ -6,6 +6,8 @@ use gitguard::{Repository, candidate::CandidateSnapshot};
 use guardengine::integration::{RunStatus, TransportDiagnostic};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicBool;
+pub mod attempts;
+
 const VERSION: &str = "archguard.git-cargo-evidence/v1alpha1";
 const MAX_CONTEXT: usize = 65536;
 
@@ -56,6 +58,10 @@ pub struct GitCargoEvidence {
     files_digest: String,
 }
 impl GitCargoEvidence {
+    pub(crate) fn run_id(&self) -> &str {
+        self.cargo.run_id()
+    }
+
     /// Exact prepared Cargo binding, including its independently scoped source digest.
     pub fn binding(&self) -> &guardengine::integration::RunBinding {
         self.cargo.binding()

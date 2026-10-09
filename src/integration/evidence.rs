@@ -19,8 +19,13 @@ pub struct CargoEvidence {
     policy: ProtectedCargoPolicy,
     binding: RunBinding,
     attempt: BoundAttempt,
+    run_id: String,
 }
 impl CargoEvidence {
+    pub(crate) fn run_id(&self) -> &str {
+        &self.run_id
+    }
+
     /// Frozen before execution; this observation conveys no admission authority.
     pub fn binding(&self) -> &RunBinding {
         &self.binding
@@ -62,7 +67,7 @@ impl CargoEvidence {
             .map_err(|_| diagnostic("identity.unavailable", "run identity unavailable"))?;
         let run_id = digest(nonce.path().as_os_str().as_encoded_bytes());
         let attempt = integration::prepare_attempt(InvocationDraft {
-            run_id,
+            run_id: run_id.clone(),
             binding: Some(binding.clone()),
             producer: Some(Producer {
                 guard: "ArchGuard".into(),
@@ -79,6 +84,7 @@ impl CargoEvidence {
             policy,
             binding,
             attempt,
+            run_id,
         })
     }
     pub fn run(self, cancelled: &AtomicBool) -> Result<EvidenceBundle, TransportDiagnostic> {
