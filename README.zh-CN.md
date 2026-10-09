@@ -33,7 +33,15 @@ cargo run -- check --project fixtures/forbidden --contract examples/agent-job-co
 
 ArchGuard 只提取事实，GuardEngine 负责契约与判定。可信合并门禁仍需在受保护 CI 上独立运行。
 
-详见 [技术架构](docs/architecture.md)、[OpenSpec](openspec/changes/add-cargo-workspace-guard/) 和 [Guard Protocol](../guardengine/docs/protocol.md)。
+详见 [技术架构](docs/architecture.md)、[OpenSpec](openspec/changes/add-cargo-workspace-guard/) 和 [Guard Protocol](https://github.com/full-stack-plugins/guardengine/blob/main/docs/protocol.md)。
+
+## 四层架构治理与实施规划
+
+未来 ArchGuard 以四层守卫为完整产品范围：**System Guard（系统/模块边界）**、**Domain Guard（领域/聚合不变量）**、**Object Guard（类型/对象职责）**、**Method Guard（方法调用、签名和副作用）**。后续计划扩展 Java ArchUnit、TypeScript 语义与 Rust 符号索引、Design Diff 和可信 CI。
+
+**当前原型只覆盖 Cargo workspace 的直接本地成员依赖**。对象/方法合理性不能通过 AI 的“高置信度”得出确定性 PASS，必须以批准的架构契约、真实语言事实和必要的人工评审为依据。
+
+完整方案见 [详细架构与 ADR](docs/architecture.md) 和 [技术方案、阶段实施与测试](docs/technical-design.md)。
 
 运行 `cargo fmt --all -- --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test --all-targets`。
 许可证：Apache-2.0。
