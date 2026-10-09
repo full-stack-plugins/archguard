@@ -14,3 +14,4 @@ sha2 = "0.10"
 # Fixed parser/process boundary dependencies for the declaration runner.
 toml = "=0.8.23"
 libc = "=0.2.177"
+glob = "=0.3.3"

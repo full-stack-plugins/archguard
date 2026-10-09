@@ -1,6 +1,6 @@
 use std::{
     fs::{self, OpenOptions},
-    io::{self, Write},
+    io::{self, Read, Write},
     path::{Path, PathBuf},
     sync::atomic::{AtomicU64, Ordering},
 };
@@ -161,6 +161,7 @@ struct ProtectedInputs {
     #[cfg(unix)]
     identities: std::collections::HashSet<(u64, u64)>,
     entries: usize,
+    manifests: std::collections::HashSet<(PathBuf, PathBuf)>,
 }
 impl ProtectedInputs {
     fn collect_project(&mut self, project: &Path) -> io::Result<()> {
@@ -170,40 +171,166 @@ impl ProtectedInputs {
             Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
             Err(error) => return Err(error),
         };
-        // Cargo can observe the entire workspace even when --project selects one
-        // member. Inspect ancestry without running Cargo or writing lockfiles.
-        for ancestor in root.ancestors() {
-            let manifest = ancestor.join("Cargo.toml");
-            let metadata = match fs::metadata(&manifest) {
-                Ok(metadata) => metadata,
-                Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
-                Err(error) => return Err(error),
-            };
-            self.collect(&manifest, 0)?;
-            if metadata.len() > 16 * 1024 * 1024 {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "workspace manifest inspection budget exceeded",
-                ));
-            }
-            let bytes = fs::read(&manifest)?;
-            let parsed = std::str::from_utf8(&bytes)
-                .ok()
-                .and_then(|text| toml::from_str::<toml::Value>(text).ok());
-            let Some(parsed) = parsed else {
-                // A malformed ancestor cannot establish narrower workspace scope.
-                return self.collect(ancestor, 0);
-            };
-            if let Some(workspace) = parsed
+        let Some(parsed) = self.discover_manifest(&root.join("Cargo.toml"), 0)? else {
+            return Ok(());
+        };
+        if parsed.get("workspace").is_some()
+            || parsed
                 .get("package")
-                .and_then(|package| package.get("workspace"))
-                .and_then(toml::Value::as_str)
-            {
-                return self.collect(&ancestor.join(workspace), 0);
+                .and_then(|p| p.get("workspace"))
+                .is_some()
+        {
+            return Ok(());
+        }
+        // Cargo can observe an enclosing workspace when a member was selected.
+        for ancestor in root.ancestors().skip(1) {
+            if let Some(parsed) = self.discover_manifest(&ancestor.join("Cargo.toml"), 0)? {
+                if parsed.get("workspace").is_some() {
+                    break;
+                }
             }
-            if parsed.get("workspace").is_some() {
-                return self.collect(ancestor, 0);
+        }
+        Ok(())
+    }
+
+    fn discover_manifest(
+        &mut self,
+        manifest: &Path,
+        depth: usize,
+    ) -> io::Result<Option<toml::Value>> {
+        if depth > 64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "manifest reference depth budget exceeded",
+            ));
+        }
+        let canonical = match manifest.canonicalize() {
+            Ok(path) => path,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        let source_root = manifest
+            .parent()
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "manifest has no source parent")
+            })?
+            .canonicalize()?;
+        if !self
+            .manifests
+            .insert((canonical.clone(), source_root.clone()))
+        {
+            return Ok(None);
+        }
+        let root = canonical
+            .parent()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "manifest has no parent"))?;
+        self.collect(root, depth)?;
+        let mut bytes = Vec::new();
+        fs::File::open(&canonical)?
+            .take(16 * 1024 * 1024 + 1)
+            .read_to_end(&mut bytes)?;
+        if bytes.len() > 16 * 1024 * 1024 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "manifest inspection budget exceeded",
+            ));
+        }
+        let text = std::str::from_utf8(&bytes)
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "manifest is not UTF-8"))?;
+        let parsed: toml::Value = toml::from_str(text).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "cannot establish references from invalid manifest",
+            )
+        })?;
+        self.collect_references(root, &parsed, depth + 1)?;
+        if source_root != root {
+            // Cargo resolves a symlinked manifest's declarations from its source
+            // location. Preserve both origins rather than narrowing ambiguously.
+            self.collect(&source_root, depth)?;
+            self.collect_references(&source_root, &parsed, depth + 1)?;
+        }
+        Ok(Some(parsed))
+    }
+
+    fn collect_references(
+        &mut self,
+        root: &Path,
+        value: &toml::Value,
+        depth: usize,
+    ) -> io::Result<()> {
+        if depth > 64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "manifest reference depth budget exceeded",
+            ));
+        }
+        match value {
+            toml::Value::Table(table) => {
+                for (key, value) in table {
+                    if matches!(key.as_str(), "members" | "default-members") {
+                        let members = value.as_array().ok_or_else(|| {
+                            io::Error::new(
+                                io::ErrorKind::InvalidInput,
+                                "workspace member list must be an array",
+                            )
+                        })?;
+                        for member in members {
+                            let member = member.as_str().ok_or_else(|| {
+                                io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    "workspace member must be a string",
+                                )
+                            })?;
+                            let pattern = root.join(member);
+                            let pattern = pattern.to_str().ok_or_else(|| {
+                                io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    "non UTF-8 workspace member pattern",
+                                )
+                            })?;
+                            let matches = glob::glob(pattern).map_err(|_| {
+                                io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    "unsupported workspace member glob",
+                                )
+                            })?;
+                            for (index, matched) in matches.enumerate() {
+                                if index >= 100_000 {
+                                    return Err(io::Error::new(
+                                        io::ErrorKind::InvalidInput,
+                                        "workspace member match budget exceeded",
+                                    ));
+                                }
+                                let member =
+                                    matched.map_err(|error| io::Error::other(error.to_string()))?;
+                                self.collect(&member, depth)?;
+                                self.discover_manifest(&member.join("Cargo.toml"), depth + 1)?;
+                            }
+                        }
+                    } else if matches!(
+                        key.as_str(),
+                        "path" | "workspace" | "readme" | "license-file" | "build"
+                    ) && value.is_str()
+                    {
+                        // This deliberately protects a superset: source target paths,
+                        // package.workspace, dependency/patch paths and metadata paths.
+                        let target = root.join(value.as_str().expect("checked string"));
+                        self.collect(&target, depth)?;
+                        if target.is_dir() {
+                            self.discover_manifest(&target.join("Cargo.toml"), depth + 1)?;
+                        }
+                    } else {
+                        self.collect_references(root, value, depth + 1)?;
+                    }
+                }
             }
+            toml::Value::Array(values) => {
+                for value in values {
+                    self.collect_references(root, value, depth + 1)?;
+                }
+            }
+            _ => (),
         }
         Ok(())
     }

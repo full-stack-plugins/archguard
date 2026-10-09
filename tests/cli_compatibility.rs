@@ -286,3 +286,183 @@ fn member_project_selection_still_protects_other_workspace_member_inputs() {
     assert_eq!(std::fs::read(&other_manifest).ok(), Some(before));
     assert!(String::from_utf8_lossy(&output.stderr).contains("not modifying"));
 }
+
+fn external_member_workspace(
+    parent: &Path,
+    members: &str,
+) -> (std::path::PathBuf, std::path::PathBuf) {
+    let workspace = parent.join("workspace");
+    let member = parent.join("member");
+    std::fs::create_dir_all(&workspace).unwrap();
+    std::fs::create_dir_all(member.join("src")).unwrap();
+    std::fs::write(
+        workspace.join("Cargo.toml"),
+        format!("[workspace]\nmembers = [{members}]\nresolver = '2'\n"),
+    )
+    .unwrap();
+    std::fs::write(
+        member.join("Cargo.toml"),
+        "[package]\nname='member'\nversion='0.1.0'\nworkspace='../workspace'\n",
+    )
+    .unwrap();
+    std::fs::write(member.join("src/lib.rs"), "pub struct Member;\n").unwrap();
+    (workspace, member)
+}
+
+#[test]
+fn external_declared_and_glob_members_are_protected_without_touching_safe_outputs() {
+    for members in ["'../member'", "'../mem*'", "'../memb[e]r'"] {
+        for from_member in [false, true] {
+            for input_flag in ["--report", "--facts"] {
+                let tmp = common::Temp::new();
+                let (workspace, member) = external_member_workspace(&tmp.0, members);
+                let project = if from_member { &member } else { &workspace };
+                assert_eq!(
+                    run(&[
+                        "check",
+                        "--project",
+                        project.to_str().unwrap(),
+                        "--contract",
+                        "examples/agent-job-contract.yaml"
+                    ])
+                    .status
+                    .code(),
+                    Some(0),
+                    "fixture must be a supported legacy Cargo workspace"
+                );
+                let manifest = member.join("Cargo.toml");
+                let before = std::fs::read(&manifest).unwrap();
+                let safe_output = tmp.0.join("safe-old-output.json");
+                std::fs::write(&safe_output, "OLD SUCCESS").unwrap();
+                let safe_flag = if input_flag == "--report" {
+                    "--facts"
+                } else {
+                    "--report"
+                };
+                let output = run(&[
+                    "check",
+                    "--project",
+                    project.to_str().unwrap(),
+                    "--contract",
+                    "examples/agent-job-contract.yaml",
+                    input_flag,
+                    manifest.to_str().unwrap(),
+                    safe_flag,
+                    safe_output.to_str().unwrap(),
+                ]);
+                assert_eq!(
+                    output.status.code(),
+                    Some(4),
+                    "external member must be rejected before analysis"
+                );
+                assert_eq!(std::fs::read(&manifest).unwrap(), before);
+                assert!(
+                    !safe_output.exists(),
+                    "unrelated safe output must still be invalidated"
+                );
+                assert!(String::from_utf8_lossy(&output.stderr).contains("not modifying"));
+            }
+        }
+    }
+}
+
+#[test]
+fn external_nonmember_path_dependency_inputs_are_protected_transitively() {
+    let tmp = common::Temp::new();
+    let project = tmp.0.join("project");
+    let external = tmp.0.join("external");
+    let transitive = tmp.0.join("transitive");
+    for dir in [&project, &external, &transitive] {
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::write(dir.join("src/lib.rs"), "pub struct Item;\n").unwrap();
+    }
+    std::fs::write(project.join("Cargo.toml"), "[package]\nname='project'\nversion='0.1.0'\n[workspace]\n[dependencies]\nexternal={path='../external'}\n").unwrap();
+    std::fs::write(external.join("Cargo.toml"), "[package]\nname='external'\nversion='0.1.0'\n[workspace]\n[dependencies]\ntransitive={path='../transitive'}\n").unwrap();
+    std::fs::write(
+        transitive.join("Cargo.toml"),
+        "[package]\nname='transitive'\nversion='0.1.0'\n[workspace]\n",
+    )
+    .unwrap();
+    assert_eq!(
+        run(&[
+            "check",
+            "--project",
+            project.to_str().unwrap(),
+            "--contract",
+            "examples/agent-job-contract.yaml"
+        ])
+        .status
+        .code(),
+        Some(0)
+    );
+    for input in [external.join("Cargo.toml"), transitive.join("src/lib.rs")] {
+        let before = std::fs::read(&input).unwrap();
+        let output = run(&[
+            "check",
+            "--project",
+            project.to_str().unwrap(),
+            "--contract",
+            "examples/agent-job-contract.yaml",
+            "--report",
+            input.to_str().unwrap(),
+        ]);
+        assert_eq!(output.status.code(), Some(4));
+        assert_eq!(std::fs::read(&input).unwrap(), before);
+        assert!(String::from_utf8_lossy(&output.stderr).contains("not modifying"));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn symlinked_manifest_preserves_the_dependency_root_actually_read_by_cargo() {
+    let tmp = common::Temp::new();
+    let project = tmp.0.join("primary/project");
+    let stored = tmp.0.join("stored/project");
+    for root in [&project, &stored] {
+        std::fs::create_dir_all(root.join("src")).unwrap();
+        std::fs::write(root.join("src/lib.rs"), "").unwrap();
+        let dependency = root.parent().unwrap().join("dependency");
+        std::fs::create_dir_all(dependency.join("src")).unwrap();
+        std::fs::write(dependency.join("src/lib.rs"), "").unwrap();
+        std::fs::write(
+            dependency.join("Cargo.toml"),
+            "[package]\nname='dependency'\nversion='0.1.0'\n[workspace]\n",
+        )
+        .unwrap();
+    }
+    std::fs::write(stored.join("Cargo.toml"), "[package]\nname='project'\nversion='0.1.0'\n[workspace]\n[dependencies]\ndependency={path='../dependency'}\n").unwrap();
+    std::os::unix::fs::symlink(stored.join("Cargo.toml"), project.join("Cargo.toml")).unwrap();
+    let metadata = Command::new("cargo")
+        .args([
+            "metadata",
+            "--offline",
+            "--no-deps",
+            "--format-version",
+            "1",
+        ])
+        .current_dir(&project)
+        .output()
+        .unwrap();
+    assert!(
+        metadata.status.success(),
+        "{}",
+        String::from_utf8_lossy(&metadata.stderr)
+    );
+    let metadata: serde_json::Value = serde_json::from_slice(&metadata.stdout).unwrap();
+    let observed = metadata["packages"][0]["dependencies"][0]["path"]
+        .as_str()
+        .unwrap();
+    let input = Path::new(observed).join("Cargo.toml");
+    let before = std::fs::read(&input).unwrap();
+    let output = run(&[
+        "check",
+        "--project",
+        project.to_str().unwrap(),
+        "--contract",
+        "examples/agent-job-contract.yaml",
+        "--report",
+        input.to_str().unwrap(),
+    ]);
+    assert_eq!(output.status.code(), Some(4));
+    assert_eq!(std::fs::read(&input).unwrap(), before);
+}
