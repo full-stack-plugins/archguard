@@ -91,3 +91,8 @@ SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 是六个�
 
 运行 `cargo fmt --all -- --check`、`cargo clippy --all-targets -- -D warnings`、`cargo test --all-targets`。
 许可证：Apache-2.0。
+
+
+## OpenSpec 实施待办
+
+新增增量 [proposal](openspec/changes/extend-architecture-analysis-and-evidence/proposal.md)、[design](openspec/changes/extend-architecture-analysis-and-evidence/design.md)、[规范](openspec/changes/extend-architecture-analysis-and-evidence/specs/) 与 [tasks](openspec/changes/extend-architecture-analysis-and-evidence/tasks.md)，将架构方案拆成待实施工作。参阅[跨仓依赖路线图](openspec/guard-roadmap.md)与[结构验证记录](openspec/validation-2026-10-09.md)。所有新增实施任务保持未勾选；本分支新增规划，不新增产品功能。前文源码树清单和验证限制对应检查基线或较早的架构审阅阶段；本次另行新增 OpenSpec 文档并记录实际 CLI 校验。既有 change 的任务归属和历史完成证据继续保留。
