@@ -1,0 +1,17 @@
+[package]
+name = "profile-app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+renamed = { package = "profile-core", path = "../core", optional = true }
+external = { package = "profile-external", path = "../external" }
+
+[dev-dependencies]
+renamed = { package = "profile-core", path = "../core" }
+
+[build-dependencies]
+renamed = { package = "profile-core", path = "../core" }
+
+[target.'cfg(unix)'.dependencies]
+renamed = { package = "profile-core", path = "../core", optional = true }
