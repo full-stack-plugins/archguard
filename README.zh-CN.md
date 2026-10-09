@@ -97,4 +97,6 @@ SpecGuard、ArchGuard、CodeGuard、TestGuard、GitGuard、FlowGuard 是六个�
 
 新增增量 [proposal](openspec/changes/extend-architecture-analysis-and-evidence/proposal.md)、[design](openspec/changes/extend-architecture-analysis-and-evidence/design.md)、[规范](openspec/changes/extend-architecture-analysis-and-evidence/specs/) 与 [tasks](openspec/changes/extend-architecture-analysis-and-evidence/tasks.md)，将架构方案拆成待实施工作。参阅[跨仓依赖路线图](openspec/guard-roadmap.md)与[结构验证记录](openspec/validation-2026-10-09.md)。任务勾选仅登记独立验收结果；当前实现和验收进度见 [implementation-progress](docs/implementation-progress.md)。前文源码树清单和验证限制对应检查基线或较早的架构审阅阶段；本次另行新增 OpenSpec 文档并记录实际 CLI 校验。既有 change 的任务归属和历史完成证据继续保留。
 
-库接口现已增加固定 OpenJDK 21 的静态字节码适配器，待独立审查。它保留必需类型范围、重载描述符与真实 native capture 来源；反射和动态行为仍标记为未知。详见[能力矩阵](docs/analyzer-capabilities.md)与[JDK 决策](docs/decisions/0007-fixed-jdk-classfile-provider.md)。原有 CLI 仍面向 Cargo。
+库接口现已增加固定 OpenJDK 21 的静态字节码适配器，已通过受限静态 profile 独立审查。它保留必需类型范围、重载描述符与真实 native capture 来源；反射和动态行为仍标记为未知。详见[能力矩阵](docs/analyzer-capabilities.md)与[JDK 决策](docs/decisions/0007-fixed-jdk-classfile-provider.md)。原有 CLI 仍面向 Cargo。
+
+固定 TypeScript5.9.3 compiler API 适配器已实现，待独立审查。它支持受保护 paths 别名、跨包声明来源和重载签名；project references 明确拒绝，动态导入与缺失来源保持缺覆盖，不宣称运行时调用完整性。

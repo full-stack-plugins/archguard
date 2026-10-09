@@ -5,11 +5,11 @@
 ArchGuard is the architecture-focused specialist Guard in the [Guard ecosystem](https://github.com/full-stack-plugins).
 Its **v0.1 proof of concept** extracts real Rust Cargo workspace relationships and evaluates an independent GuardEngine contract.
 
-Current local implementation (crate `0.1.0`): bounded Cargo declarations and strict GE evidence, deterministic system rules over supplied LanguageObservation, and an opt-in GitGuard candidate source bridge. The Git bridge reads actual immutable candidate blobs into private analysis; it does not authenticate a producer, controller or queue. Native CLI/schema remain compatible. See [implementation status](docs/implementation-progress.md), [system rules](docs/decisions/0003-local-system-rules.md) and [Git source boundary](docs/decisions/0004-git-candidate-source.md). Real language providers, authenticated baselines, trust services, admission and published packages remain unimplemented.
+Current local implementation (crate `0.1.0`): bounded Cargo declarations and strict GE evidence, deterministic system rules over supplied LanguageObservation, and an opt-in GitGuard candidate source bridge. The Git bridge reads actual immutable candidate blobs into private analysis; it does not authenticate a producer, controller or queue. Native CLI/schema remain compatible. See [implementation status](docs/implementation-progress.md), [system rules](docs/decisions/0003-local-system-rules.md) and [Git source boundary](docs/decisions/0004-git-candidate-source.md). The fixed JDK21 static bytecode provider is independently accepted; the fixed TypeScript5.9.3 compiler provider is implemented pending review. Both retain explicit static scope and runtime gaps. Authenticated baselines, production trust services, admission and published packages remain unimplemented. See the [capability matrix](docs/analyzer-capabilities.md).
 
 ## Prerequisites
 
-Rust 1.90+, Cargo, and sibling `../guardengine` and `../gitguard` checkouts (temporary local path dependencies). The actual GitGuard dependency requires Rust 1.90. Repositories remain independent; fixed published artifacts are a separate release task.
+Rust 1.90+, Cargo, and sibling `../guardengine`, `../gitguard` and `../specguard` checkouts (temporary local path dependencies). The actual GitGuard dependency requires Rust 1.90. Repositories remain independent; fixed published artifacts are a separate release task.
 
 ```text
 workspace-full-stack-plugins/

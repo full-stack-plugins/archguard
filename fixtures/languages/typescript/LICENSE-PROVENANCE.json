@@ -1,0 +1,15 @@
+{
+  "node": {
+    "version": "v24.19.0",
+    "local_notice": "not present in inspected runtime root; node --license unsupported",
+    "license_status": "official Node project license reference; exact bundled distribution notice not independently retrieved",
+    "official_reference": "https://github.com/nodejs/node/blob/main/LICENSE"
+  },
+  "typescript": {
+    "version": "5.9.3",
+    "installed_notice": "node_modules/typescript/LICENSE.txt",
+    "sha256": "a7d00bfd54525bc694b6e32f64c7ebcf5e6b7ae3657be5cc12767bce74654a47",
+    "license": "Apache-2.0"
+  },
+  "redistribution": "No compiler or Node binary vendored; installed fixed-tool invocation"
+}
