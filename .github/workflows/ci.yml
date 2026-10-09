@@ -10,11 +10,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: archguard
-      # Temporary sibling-source dependency. Replace with pinned package when released.
+      # Pin the complete sibling-source graph until independent packages are released.
       - uses: actions/checkout@v4
         with:
           repository: full-stack-plugins/guardengine
+          ref: 34f07583f2e4123dc1b2bb4efa489c3bf72b03d6
           path: guardengine
+      - uses: actions/checkout@v4
+        with:
+          repository: full-stack-plugins/gitguard
+          ref: 601b8ebd4e636e566398ed393d1a11f9413cbdb2
+          path: gitguard
+      - uses: actions/checkout@v4
+        with:
+          repository: full-stack-plugins/specguard
+          ref: 8fc3f9b0df0df388b8f4ec6cdedab64f89d1d033
+          path: specguard
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
