@@ -28,13 +28,19 @@ fn main() {
         ("Forbidden", "forbidden.ts"),
         ("Dynamic", "dynamic.ts"),
         ("Missing", "forbidden.ts"),
+        ("Ambient", "ambient.ts"),
     ] {
         let folder = dest.join(name);
         std::fs::create_dir(&folder).unwrap();
         let inputs = folder.join("sources");
         std::fs::create_dir_all(inputs.join("core")).unwrap();
         std::fs::create_dir_all(inputs.join("infra")).unwrap();
-        for file in [entry, "core/job.ts", "infra/store.ts"] {
+        let infra_file = if name == "Ambient" {
+            "ambient.d.ts"
+        } else {
+            "infra/store.ts"
+        };
+        for file in [entry, "core/job.ts", infra_file] {
             if name != "Missing" || file != "infra/store.ts" {
                 std::fs::copy(source.join(file), inputs.join(file)).unwrap();
             }
@@ -43,7 +49,7 @@ fn main() {
             BTreeMap::from([
                 (entry.into(), "app".into()),
                 ("core/job.ts".into(), "core".into()),
-                ("infra/store.ts".into(), "infra".into()),
+                (infra_file.into(), "infra".into()),
             ]),
             BTreeMap::from([
                 ("@core/*".into(), vec!["core/*".into()]),

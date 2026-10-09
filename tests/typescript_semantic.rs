@@ -304,3 +304,140 @@ fn prepared_toolchain_does_not_execute_a_replaced_node_path() {
     std::fs::remove_file(&copied).unwrap();
     assert!(tools.analyze(&t.0, &profile()).is_ok());
 }
+
+#[test]
+fn independent_ambient_value_dependency_is_not_zero_edge_complete() {
+    let t = common::Temp::new();
+    std::fs::write(
+        t.0.join("ambient.d.ts"),
+        "declare const ExternalValue: {id: string};",
+    )
+    .unwrap();
+    std::fs::write(
+        t.0.join("main.ts"),
+        "export const value = ExternalValue.id;",
+    )
+    .unwrap();
+    let p = TypeScriptProfile::freeze(
+        BTreeMap::from([
+            ("ambient.d.ts".into(), "core".into()),
+            ("main.ts".into(), "app".into()),
+        ]),
+        BTreeMap::new(),
+    )
+    .unwrap();
+    let a = tool().analyze(&t.0, &p).unwrap();
+    assert!(
+        !a.observation().is_complete(Relation::DependsOn)
+            || a.observation()
+                .edges()
+                .iter()
+                .any(|e| e.from.module() == "app" && e.to.module() == "core"),
+        "ambient value access lacks a dependency yet claims complete: {}",
+        String::from_utf8_lossy(a.capture())
+    );
+}
+#[test]
+fn independent_ambient_value_access_must_not_pass_real_forbidden_direction() {
+    let t = common::Temp::new();
+    std::fs::write(
+        t.0.join("ambient.d.ts"),
+        "declare const ExternalValue: {id: string};",
+    )
+    .unwrap();
+    std::fs::write(
+        t.0.join("main.ts"),
+        "export const value = ExternalValue.id;",
+    )
+    .unwrap();
+    let p = TypeScriptProfile::freeze(
+        BTreeMap::from([
+            ("ambient.d.ts".into(), "core".into()),
+            ("main.ts".into(), "app".into()),
+        ]),
+        BTreeMap::new(),
+    )
+    .unwrap();
+    let a = tool().analyze(&t.0, &p).unwrap();
+    let result = evaluate(&a, "core");
+    assert_ne!(
+        result.report().decision,
+        guardengine::Decision::Allow,
+        "real protected app->core rule incorrectly allows ambient source dependency"
+    );
+}
+#[test]
+fn ambient_values_functions_enum_and_shorthand_preserve_semantic_origins() {
+    for source in [
+        "export const value = ExternalValue.id;",
+        "export const value = externalFunction();",
+        "export const value = {ExternalValue};",
+        "export const value = ExternalEnum.Member;",
+        "const localAlias = ExternalValue; export const value = localAlias.id;",
+    ] {
+        let t = common::Temp::new();
+        std::fs::write(t.0.join("ambient.d.ts"),"declare const ExternalValue: {id:string}; declare function externalFunction(): string; declare enum ExternalEnum { Member }").unwrap();
+        std::fs::write(t.0.join("main.ts"), source).unwrap();
+        let p = TypeScriptProfile::freeze(
+            BTreeMap::from([
+                ("ambient.d.ts".into(), "core".into()),
+                ("main.ts".into(), "app".into()),
+            ]),
+            BTreeMap::new(),
+        )
+        .unwrap();
+        let a = tool().analyze(&t.0, &p).unwrap();
+        assert!(
+            a.observation()
+                .edges()
+                .iter()
+                .any(|e| e.from.module() == "app"
+                    && e.to.module() == "core"
+                    && e.source.path() == "main.ts"),
+            "{source}: {}",
+            String::from_utf8_lossy(a.capture())
+        );
+        assert_eq!(
+            evaluate(&a, "core").report().decision,
+            guardengine::Decision::Block
+        );
+        assert!(!a.observation().is_complete(Relation::Calls));
+    }
+}
+#[test]
+fn ambient_dependency_does_not_clear_dynamic_import_unknown() {
+    let t = common::Temp::new();
+    std::fs::write(
+        t.0.join("ambient.d.ts"),
+        "declare const ExternalValue: {id:string};",
+    )
+    .unwrap();
+    std::fs::write(
+        t.0.join("main.ts"),
+        "export const value = ExternalValue.id; export const load = (path:string) => import(path);",
+    )
+    .unwrap();
+    let p = TypeScriptProfile::freeze(
+        BTreeMap::from([
+            ("ambient.d.ts".into(), "core".into()),
+            ("main.ts".into(), "app".into()),
+        ]),
+        BTreeMap::new(),
+    )
+    .unwrap();
+    let a = tool().analyze(&t.0, &p).unwrap();
+    assert!(
+        a.observation()
+            .edges()
+            .iter()
+            .any(|e| e.from.module() == "app" && e.to.module() == "core")
+    );
+    assert!(
+        a.observation()
+            .unknowns()
+            .iter()
+            .any(|u| u.reason.contains("nonliteral"))
+    );
+    assert!(!a.observation().is_complete(Relation::DependsOn));
+    assert!(!a.observation().is_complete(Relation::Calls));
+}

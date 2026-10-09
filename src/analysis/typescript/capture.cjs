@@ -100,6 +100,15 @@ for(const file of required){
     else gap(file,'method signature unavailable',node);
    }else gap(file,'computed or anonymous callable unsupported',node);
   }
+  // Value-position identifiers also carry static declaration dependencies:
+  // ambient variables/functions/enums need not have an import or type node.
+  // Shorthand property symbols name the new local property, so ask the checker
+  // for its value symbol explicitly rather than guessing from identifier text.
+  if(ts.isIdentifier(node)) {
+   const symbol=ts.isShorthandPropertyAssignment(node.parent)&&node.parent.name===node
+    ?checker.getShorthandAssignmentValueSymbol(node.parent):checker.getSymbolAtLocation(node);
+   target(node,symbol);
+  }
   if(ts.isImportDeclaration(node)||ts.isExportDeclaration(node)){
    if(node.moduleSpecifier)target(node.moduleSpecifier,checker.getSymbolAtLocation(node.moduleSpecifier));
   }
