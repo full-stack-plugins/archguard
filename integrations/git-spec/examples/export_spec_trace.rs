@@ -1,7 +1,9 @@
 //! Reproducible local fixture producer; its approval port is deliberately fixture-only.
 #[path = "../tests/common/mod.rs"]
 mod common;
-use archguard::{domain::baseline::ArchitectureTrace, integration::trace::TracedCargoEvidence};
+use archguard_git_spec::{
+    domain::baseline::ArchitectureTrace, integration::trace::TracedCargoEvidence,
+};
 use common::spec_trace::{Fixture, links, policy, port};
 use std::{path::Path, sync::atomic::AtomicBool};
 fn write(output: &Path, name: &str, value: &impl serde::Serialize) {

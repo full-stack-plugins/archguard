@@ -1,5 +1,7 @@
 //! Export an actual Cargo producer run over real temporary Git objects.
-use archguard::integration::{binding::GitCargoEvidence, projection::ProtectedCargoPolicy};
+use archguard_git_spec::integration::{
+    binding::GitCargoEvidence, projection::ProtectedCargoPolicy,
+};
 use gitguard::{
     Repository, candidate::CandidateRequest, scope::TaskScope, subject::SubjectRequest,
 };

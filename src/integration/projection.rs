@@ -13,18 +13,21 @@ use std::collections::BTreeSet;
 pub const BUNDLE_VERSION: &str = "archguard.evidence/v1alpha1";
 pub const DOMAIN_VERSION: &str = "archguard.cargo-domain/v1alpha1";
 pub const PROFILE: &str = "cargo-declarations-v1";
-pub(crate) fn diagnostic(code: &str, message: &str) -> TransportDiagnostic {
+#[doc(hidden)]
+pub fn diagnostic(code: &str, message: &str) -> TransportDiagnostic {
     TransportDiagnostic {
         code: code.into(),
         message: message.into(),
     }
 }
-pub(crate) fn digest(bytes: &[u8]) -> String {
+#[doc(hidden)]
+pub fn digest(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 /// Bound serialization refuses before growing an artifact beyond the shared byte cap.
-pub(crate) fn bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, String> {
+#[doc(hidden)]
+pub fn bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, String> {
     struct Sink(Vec<u8>);
     impl std::io::Write for Sink {
         fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
@@ -43,7 +46,8 @@ pub(crate) fn bytes<T: Serialize>(value: &T) -> Result<Vec<u8>, String> {
         .map_err(|_| "artifact serialization budget exceeded")?;
     Ok(sink.0)
 }
-pub(crate) fn value<T: Serialize>(input: &T) -> Result<Value, String> {
+#[doc(hidden)]
+pub fn value<T: Serialize>(input: &T) -> Result<Value, String> {
     serde_json::from_slice(&bytes(input)?).map_err(|_| "invalid artifact".into())
 }
 pub(crate) fn reference(name: &str, value: &Value) -> Result<ArtifactRef, String> {
@@ -123,10 +127,16 @@ impl ProtectedCargoPolicy {
             profile_digest,
         })
     }
+    pub fn contract(&self) -> &GuardContract {
+        &self.contract
+    }
+    pub fn profile(&self) -> &FrozenAnalysisProfile {
+        &self.profile
+    }
     pub fn profile_digest(&self) -> &str {
         &self.profile_digest
     }
-    pub(crate) fn coverage(&self, observed: Option<&BTreeSet<String>>) -> Coverage {
+    pub fn coverage(&self, observed: Option<&BTreeSet<String>>) -> Coverage {
         let mut required = BTreeSet::from([
             format!("cargo.profile:{}", self.profile_digest),
             "cargo.declarations".into(),
@@ -165,7 +175,7 @@ impl ProtectedCargoPolicy {
 }
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(crate) struct CargoDomain {
+pub struct CargoDomain {
     pub api_version: String,
     pub profile: String,
     pub profile_digest: String,

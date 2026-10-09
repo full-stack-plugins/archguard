@@ -22,7 +22,7 @@ pub struct CargoEvidence {
     run_id: String,
 }
 impl CargoEvidence {
-    pub(crate) fn run_id(&self) -> &str {
+    pub fn run_id(&self) -> &str {
         &self.run_id
     }
 
@@ -47,7 +47,7 @@ impl CargoEvidence {
             .map_err(|_| diagnostic("source.unresolved", "Cargo source preparation failed"))?;
         Self::from_analysis(analysis, policy, context)
     }
-    pub(crate) fn from_analysis(
+    pub fn from_analysis(
         analysis: PreparedAnalysis,
         policy: ProtectedCargoPolicy,
         context: CandidateContext,

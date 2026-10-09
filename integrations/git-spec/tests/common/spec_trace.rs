@@ -1,6 +1,6 @@
 //! Explicit fixture-only approval; never a production provider.
 use super::{Temp, evidence};
-use archguard::{
+use archguard_git_spec::{
     domain::baseline::{ProtectedTraceMapping, RuleTraceLink},
     integration::projection::ProtectedCargoPolicy,
 };

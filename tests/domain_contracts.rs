@@ -17,7 +17,12 @@ use std::{
 const JDK: &str = "/workspace/guard-toolchain/jdk21/usr/lib/jvm/java-21-openjdk-amd64";
 fn tools() -> &'static JavaToolchain {
     static TOOLS: OnceLock<JavaToolchain> = OnceLock::new();
-    TOOLS.get_or_init(|| JavaToolchain::freeze(Path::new(JDK)).unwrap())
+    TOOLS.get_or_init(|| {
+        JavaToolchain::freeze(Path::new(
+            &std::env::var("ARCHGUARD_TEST_JDK").unwrap_or_else(|_| JDK.into()),
+        ))
+        .unwrap()
+    })
 }
 fn profile() -> JavaProfile {
     JavaProfile::freeze(

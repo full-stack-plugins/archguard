@@ -18,7 +18,7 @@ pub fn analyze(
         .observe(subject)?
         .facts)
 }
-pub(crate) struct PreparedAnalysis {
+pub struct PreparedAnalysis {
     isolated: runner::IsolatedProject,
     tools: runner::Toolchain,
     environment: std::collections::BTreeMap<std::ffi::OsString, std::ffi::OsString>,
@@ -33,7 +33,7 @@ impl PreparedAnalysis {
     pub fn snapshot_digest(&self) -> String {
         self.inventory.digest()
     }
-    pub(crate) fn files_digest(&self) -> String {
+    pub fn files_digest(&self) -> String {
         self.inventory.files_digest()
     }
     pub fn inventory_keys(&self) -> Vec<String> {
@@ -45,7 +45,7 @@ impl PreparedAnalysis {
     ) -> Result<Self, GuardError> {
         Self::prepare_bound(root, profile, vec![])
     }
-    pub(crate) fn prepare_bound(
+    pub fn prepare_bound(
         root: &Path,
         profile: &profile::FrozenAnalysisProfile,
         binding_identity: Vec<(String, Vec<u8>)>,
@@ -102,7 +102,7 @@ impl PreparedAnalysis {
             inventory,
         })
     }
-    pub fn observe(self, subject: &str) -> Result<DeclarationAnalysis, GuardError> {
+    pub(crate) fn observe(self, subject: &str) -> Result<DeclarationAnalysis, GuardError> {
         let metadata = runner::run(
             &self.tools.cargo,
             &[

@@ -1,4 +1,6 @@
-use archguard::integration::{binding::GitCargoEvidence, projection::ProtectedCargoPolicy};
+use archguard_git_spec::integration::{
+    binding::GitCargoEvidence, projection::ProtectedCargoPolicy,
+};
 use gitguard::{
     Repository,
     candidate::{CandidateRequest, CandidateSnapshot},
@@ -138,7 +140,8 @@ fn exact_wrapper_rejects_old_queue_base_members_requirements_and_tampered_source
         .unwrap();
     result.verify(&repo, &s).unwrap();
     let serialized = serde_json::to_vec(&result).unwrap();
-    archguard::integration::binding::GitEvidenceBundle::load(&serialized, &repo, &s).unwrap();
+    archguard_git_spec::integration::binding::GitEvidenceBundle::load(&serialized, &repo, &s)
+        .unwrap();
     for (key, value) in [
         ("base_oid", serde_json::json!(candidate)),
         ("merge_group_id", serde_json::json!("new-queue")),
@@ -154,7 +157,7 @@ fn exact_wrapper_rejects_old_queue_base_members_requirements_and_tampered_source
     let mut damaged = serde_json::to_value(&result).unwrap();
     damaged["files_digest"] = serde_json::json!(format!("sha256:{}", "0".repeat(64)));
     assert!(
-        archguard::integration::binding::GitEvidenceBundle::load(
+        archguard_git_spec::integration::binding::GitEvidenceBundle::load(
             &serde_json::to_vec(&damaged).unwrap(),
             &repo,
             &s
@@ -164,7 +167,7 @@ fn exact_wrapper_rejects_old_queue_base_members_requirements_and_tampered_source
     damaged = serde_json::to_value(&result).unwrap();
     damaged["object_format"] = serde_json::json!("sha256");
     assert!(
-        archguard::integration::binding::GitEvidenceBundle::load(
+        archguard_git_spec::integration::binding::GitEvidenceBundle::load(
             &serde_json::to_vec(&damaged).unwrap(),
             &repo,
             &s
@@ -316,7 +319,7 @@ fn actual_two_parent_queue_merge_differs_from_member_head() {
 
 #[test]
 fn review_domain_file_inventory_must_match_actual_candidate_files() {
-    use archguard::integration::binding::GitEvidenceBundle;
+    use archguard_git_spec::integration::binding::GitEvidenceBundle;
     use sha2::{Digest, Sha256};
     let (dir, base, candidate) = fixture("sha1");
     let repo = Repository::discover(dir.0.as_path(), "repo").unwrap();
@@ -372,4 +375,12 @@ fn review_domain_file_inventory_must_match_actual_candidate_files() {
         contradictions.is_empty(),
         "accepted contradictory inventories: {contradictions:?}"
     );
+}
+
+#[test]
+fn ordinary_source_directory_cannot_become_a_verified_candidate_repository() {
+    let dir = common::Temp::new();
+    dir.copy_fixture("allowed");
+    assert!(!dir.0.join(".git").exists());
+    assert!(Repository::discover(dir.0.as_path(), "claimed-repository").is_err());
 }

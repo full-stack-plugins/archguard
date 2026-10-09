@@ -1,6 +1,6 @@
 # Local candidate attempt isolation
 
-`integration::binding::attempts` adds an explicit controller-owned history for the existing Git Cargo declaration profile. It does not change the legacy CLI, generic Cargo evidence, domain-contract or traced-baseline APIs. Its consistency checks do not authenticate a producer or approval and do not grant merge eligibility.
+`archguard_git_spec::integration::binding::attempts` adds an explicit controller-owned history for the existing Git Cargo declaration profile. It does not change the legacy CLI, generic Cargo evidence, domain-contract or traced-baseline APIs. Its consistency checks do not authenticate a producer or approval and do not grant merge eligibility.
 
 ## Registration and completion
 

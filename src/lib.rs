@@ -1,5 +1,7 @@
 //! ArchGuard's first adapter reads REAL Cargo workspace package dependencies.
 //! It produces neutral GuardFacts and delegates evaluation to GuardEngine.
+//! Git candidate authentication and SpecGuard trace live in the optional
+//! `archguard-git-spec` crate, outside the core dependency graph.
 
 pub mod analysis;
 pub mod domain;

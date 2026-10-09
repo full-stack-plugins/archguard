@@ -40,10 +40,10 @@ impl FrozenAnalysisProfile {
         .expect("string serialization is infallible")
     }
 
-    pub(crate) fn members(&self) -> &BTreeSet<String> {
+    pub fn members(&self) -> &BTreeSet<String> {
         &self.required_members
     }
-    pub(crate) fn relations(&self) -> &BTreeSet<String> {
+    pub fn relations(&self) -> &BTreeSet<String> {
         &self.required_relations
     }
 

@@ -1,4 +1,4 @@
-use archguard::integration::{
+use archguard_git_spec::integration::{
     binding::attempts::{AttemptHistory, PreparedGitAttempt},
     projection::ProtectedCargoPolicy,
 };
@@ -266,7 +266,7 @@ fn mutex_cas_has_exactly_one_winner_for_the_same_generation() {
 }
 #[test]
 fn replay_is_idempotent_registration_clears_current_and_foreign_history_cannot_import() {
-    use archguard::integration::binding::attempts::AppendOutcome;
+    use archguard_git_spec::integration::binding::attempts::AppendOutcome;
     let (dir, old, new) = fixture("sha1");
     let repo = Repository::discover(&dir.0, "repo").unwrap();
     let s = snapshot(&repo, &old, &new, "R", "wt");

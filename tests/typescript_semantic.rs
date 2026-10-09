@@ -10,7 +10,8 @@ fn tool() -> &'static TypeScriptToolchain {
     TOOL.get_or_init(|| {
         TypeScriptToolchain::freeze(
             Path::new(NODE),
-            Path::new("/workspace/guard-implementation/archguard/fixtures/languages/typescript/node_modules/typescript"),
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("fixtures/languages/typescript/node_modules/typescript"),
         )
         .unwrap()
     })
@@ -296,9 +297,8 @@ fn prepared_toolchain_does_not_execute_a_replaced_node_path() {
     let t = fixture();
     let copied = t.0.join("node");
     std::fs::copy(NODE, &copied).unwrap();
-    let compiler = Path::new(
-        "/workspace/guard-implementation/archguard/fixtures/languages/typescript/node_modules/typescript",
-    );
+    let compiler = &Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("fixtures/languages/typescript/node_modules/typescript");
     let tools = TypeScriptToolchain::freeze(&copied, compiler).unwrap();
     std::fs::write(&copied, "#!/bin/sh\nexit 73\n").unwrap();
     std::fs::remove_file(&copied).unwrap();

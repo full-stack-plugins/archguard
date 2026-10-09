@@ -2,6 +2,7 @@
 pub mod model;
 pub mod rules;
 
+/// Pure architecture revision lifecycle; no Git/specification trace dependency.
 pub mod baseline;
 
 pub mod contracts;

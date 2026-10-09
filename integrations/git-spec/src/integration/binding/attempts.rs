@@ -92,14 +92,14 @@ impl PreparedGitAttempt {
         candidate_budget(candidate)?;
         admit(
             &(
-                &policy.contract,
-                &policy.profile_digest,
-                &policy.profile.members(),
-                &policy.profile.relations(),
+                policy.contract(),
+                policy.profile_digest(),
+                policy.profile().members(),
+                policy.profile().relations(),
             ),
             MAX_WORK,
         )?;
-        let contract_digest = digest(&bytes(&value(&policy.contract)?)?);
+        let contract_digest = digest(&bytes(&value(policy.contract())?)?);
         let profile_digest = policy.profile_digest().to_owned();
         let required_scopes = policy.coverage(None).required_scopes;
         let analysis = GitCargoEvidence::prepare(repo, candidate, policy)
@@ -170,11 +170,11 @@ impl RegisteredGitAttempt {
 /// Sealed in-process completion, not a signed producer attestation.
 /// There is deliberately no Deserialize or mutable bundle access.
 /// ```compile_fail
-/// use archguard::integration::binding::attempts::CompletedGitAttempt;
+/// use archguard_git_spec::integration::binding::attempts::CompletedGitAttempt;
 /// let _: CompletedGitAttempt = serde_json::from_str("{}").unwrap();
 /// ```
 /// ```compile_fail
-/// use archguard::integration::binding::attempts::CompletedGitAttempt;
+/// use archguard_git_spec::integration::binding::attempts::CompletedGitAttempt;
 /// fn relabel(result: &mut CompletedGitAttempt) {
 ///     result.bundle().cargo().envelope.run_id.clear();
 /// }
@@ -341,9 +341,9 @@ impl AttemptHistory {
         if expected_binding != &completed.work.binding {
             return Err("independent expected binding mismatch".into());
         }
-        admit(&(&policy.contract, &policy.profile_digest), MAX_WORK)?;
+        admit(&(policy.contract(), policy.profile_digest()), MAX_WORK)?;
         if policy.profile_digest() != completed.work.profile_digest
-            || digest(&bytes(&value(&policy.contract)?)?) != completed.work.contract_digest
+            || digest(&bytes(&value(policy.contract())?)?) != completed.work.contract_digest
         {
             return Err("expected policy mismatch".into());
         }

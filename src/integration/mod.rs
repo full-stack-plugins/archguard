@@ -4,7 +4,3 @@ pub mod cli;
 pub mod projection;
 
 pub mod evidence;
-
-pub mod binding;
-
-pub mod trace;

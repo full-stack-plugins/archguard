@@ -1,7 +1,7 @@
 //! Actual local Git candidate source bridge. Object verification is not producer
 //! authentication, queue admission, baseline approval or authorization to write.
 use super::{evidence::CargoEvidence, projection::*};
-use crate::analysis::{PreparedAnalysis, snapshot::SnapshotInventory};
+use archguard::analysis::{PreparedAnalysis, snapshot::SnapshotInventory};
 use gitguard::{Repository, candidate::CandidateSnapshot};
 use guardengine::integration::{RunStatus, TransportDiagnostic};
 use serde::{Deserialize, Serialize};
@@ -50,6 +50,30 @@ fn files(
     SnapshotInventory::from_inputs(inputs)
         .map_err(|_| diagnostic("candidate.source", "invalid source inventory"))
 }
+fn materialize_files(
+    repo: &Repository,
+    candidate: &CandidateSnapshot,
+    root: &std::path::Path,
+) -> Result<(), String> {
+    for entry in repo
+        .read_commit_files(candidate.candidate_oid())
+        .map_err(|_| "candidate files unavailable")?
+    {
+        let path = std::str::from_utf8(entry.path()).map_err(|_| "invalid path")?;
+        let destination = root.join(path);
+        if let Some(parent) = destination.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        use std::io::Write;
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(destination)
+            .and_then(|mut file| file.write_all(entry.contents()))
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
 /// Owns a prepared isolated analysis. No mutable worktree content is analyzed.
 pub struct GitCargoEvidence {
     cargo: CargoEvidence,
@@ -91,8 +115,7 @@ impl GitCargoEvidence {
         let files_digest = inventory.digest();
         let root = tempfile::tempdir()
             .map_err(|_| diagnostic("source.unavailable", "private source unavailable"))?;
-        inventory
-            .materialize_files(root.path())
+        materialize_files(repo, candidate, root.path())
             .map_err(|_| diagnostic("source.invalid", "candidate source materialization failed"))?;
         let object_format = repo.object_format().to_owned();
         let mut identity = vec![
@@ -107,7 +130,7 @@ impl GitCargoEvidence {
             ),
         ];
         identity.extend(extra_identity);
-        let analysis = PreparedAnalysis::prepare_bound(root.path(), &policy.profile, identity)
+        let analysis = PreparedAnalysis::prepare_bound(root.path(), policy.profile(), identity)
             .map_err(|_| {
                 diagnostic(
                     "source.unresolved",

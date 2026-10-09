@@ -1,0 +1,16 @@
+[package]
+name = "archguard-git-spec"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+publish = false
+
+[dependencies]
+archguard = { path = "../..", version = "=0.1.0" }
+guardengine = { path = "../../../guardengine", version = "=0.1.0" }
+gitguard = { path = "../../../gitguard", version = "=0.1.0" }
+specguard = { path = "../../../specguard", version = "=0.1.0" }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.145"
+tempfile = "=3.23.0"
+sha2 = "=0.10.9"
