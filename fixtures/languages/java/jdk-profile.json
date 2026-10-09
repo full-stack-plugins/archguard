@@ -1,0 +1,11 @@
+{
+  "version": "21.0.12.1",
+  "implementor": "Debian",
+  "files": {
+    "release": "36b8804939e4f135ac0f7a291fa7b4e8d99fd18dd08d05c9b869463c670cdd37",
+    "bin/java": "6698f6f10143ed8463b06062281c727152d2e0ae2a3569b1716fbb2c6cedf0ba",
+    "bin/javac": "94b4eb733f5d6b44ff7ae8437206de8428ac4e2e3e8efc50b204e54c5d84dcc3",
+    "lib/modules": "f82ec56fbf7c7b69da09a04d4fb103c74c44e6443c8a1b2744e59c5539e7f781",
+    "lib/server/libjvm.so": "56a71b907446b53ea9ab0f1599d3c22298f150ac2f9530acc62d5e7fc003e564"
+  }
+}

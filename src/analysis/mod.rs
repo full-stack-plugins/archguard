@@ -144,3 +144,5 @@ impl PreparedAnalysis {
         Ok(DeclarationAnalysis { facts, observation })
     }
 }
+
+pub mod java;

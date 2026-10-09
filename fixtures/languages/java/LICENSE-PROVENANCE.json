@@ -1,0 +1,9 @@
+{
+  "installed_notice": "/workspace/guard-toolchain/jdk21/usr/share/doc/openjdk-21-jre-headless/copyright",
+  "sha256": "7a1aff82dba5eecc7402e247411010d166486ce0950737b8d53ccbe53d655bab",
+  "general_files_license": "GPL2 with Classpath exception",
+  "source": "https://github.com/openjdk/jdk21u",
+  "official_license": "https://openjdk.org/legal/gplv2%2Bce.html",
+  "helper_license": "Apache-2.0",
+  "jdk_sources_or_binaries_vendored": false
+}

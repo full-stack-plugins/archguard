@@ -213,7 +213,7 @@ mod copy;
 #[cfg(target_os = "linux")]
 use copy::tree as copy_tree;
 #[cfg(not(target_os = "linux"))]
-fn copy_tree(_: &Path, _: &Path, _: &Budget, _: Instant) -> Result<(), Failure> {
+fn copy_tree(_: &Path, _: &Path, _: &Budget, _: Instant, _: bool) -> Result<(), Failure> {
     Err(Failure::UnsupportedPlatform)
 }
 pub struct IsolatedProject {
@@ -231,6 +231,22 @@ impl IsolatedProject {
         source: &Path,
         allowed_roots: &[PathBuf],
         budget: &Budget,
+    ) -> Result<Self, Failure> {
+        Self::copy_profile(source, allowed_roots, budget, true)
+    }
+    /// Non-Cargo artifact input: same fd/path budgets, no Cargo-specific names/config.
+    pub(crate) fn copy_artifacts(
+        source: &Path,
+        allowed_roots: &[PathBuf],
+        budget: &Budget,
+    ) -> Result<Self, Failure> {
+        Self::copy_profile(source, allowed_roots, budget, false)
+    }
+    fn copy_profile(
+        source: &Path,
+        allowed_roots: &[PathBuf],
+        budget: &Budget,
+        cargo: bool,
     ) -> Result<Self, Failure> {
         budget.validate()?;
         let started = Instant::now();
@@ -254,7 +270,7 @@ impl IsolatedProject {
             root: base.path().join("project"),
             base,
         };
-        for ancestor in result.base.path().ancestors() {
+        for ancestor in result.base.path().ancestors().filter(|_| cargo) {
             for file in [".cargo/config", ".cargo/config.toml"] {
                 match fs::symlink_metadata(ancestor.join(file)) {
                     Ok(_) => {
@@ -269,8 +285,10 @@ impl IsolatedProject {
         }
         fs::create_dir(result.root()).map_err(|e| Failure::Input(e.to_string()))?;
         fs::create_dir(result.tool_home()).map_err(|e| Failure::Input(e.to_string()))?;
-        copy_tree(&source, result.root(), budget, started)?;
-        validate_manifests(result.root(), result.root())?;
+        copy_tree(&source, result.root(), budget, started, cargo)?;
+        if cargo {
+            validate_manifests(result.root(), result.root())?;
+        }
         if started.elapsed() >= budget.timeout {
             return Err(Failure::Timeout);
         }

@@ -1,35 +1,21 @@
-# Analyzer capabilities — implementation slice, pending review
+# Analyzer capabilities — local implementation, explicit profiles
 
-## Cargo
+## Current boundaries
 
-| Profile | What is actually observed | Limitations |
+| Profile/API | Observed capability | Limits |
 |---|---|---|
-| `legacy` (default) | Cargo workspace member direct path declarations, deduplicated `(subject, depends_on, object, source)` | Original manifest-only digest and metadata-error partial/BLOCK semantics; no timeout or isolation guarantee |
-| `cargo-declarations-v1` (experimental, explicit) | Same direct-member relation, with required scope copied from the caller-supplied contract before extraction; missing members/unknown predicates yield partial/BLOCK | Declaration graph, never active feature/target or source/call graph; caller must obtain protected policy externally; no candidate authentication |
+| legacy CLI | Original Cargo direct-member path declarations | Original manifest digest and metadata-error partial/BLOCK; unchanged CLI/schema/exits |
+| cargo-declarations-v1 / CargoEvidence | Frozen protected Cargo scope, actual bounded metadata, isolated inventory and GE native evidence | Declared dependencies only; public CandidateContext remains unverified |
+| GitCargoEvidence | Actual GG candidate/private-tree source equality and scoped Cargo evidence | Local verification, not production identity or admission |
+| TracedCargoEvidence | Actual SG fixture-profile references reverse checked against candidate blobs | Historical baseline obligations only; no production approval or candidate test execution |
+| System rules | Layers, forbidden direction and real-edge cycles over local LanguageObservation | Source provider scope/completeness remains explicit |
+| Java21 classfile API | Actual selected classfiles → Module/Type/Method identities and static DependsOn | Exact installed JDK/profile below; no complete Calls or runtime graph |
+| TypeScript5.9.3 evaluation | Real alias/overload/dynamic-import compiler fixture | Evaluation only, no production provider |
+| Rust symbols | Model only | No rust-analyzer adapter/profile implemented |
 
-The library's `analysis::cargo::observe` preserves each Cargo declaration's actual member target, package name, rename, kind, optional flag, target condition, path and registry/git source, plus its source manifest. It remains the direct legacy extraction path. Enhanced `analysis::analyze` uses an isolated copy and exports only the neutral facts; a serialized domain artifact and evidence envelope are not published in this slice.
+Cargo enhanced inventory includes isolated files, frozen profile and resolved tool/environment identity. Actual Git and SG wrappers retain their own scoped digests; none is silently substituted for the measured Cargo inventory. Candidate Cargo config, symlinks/special files, escaped manifest paths and ambient ancestor config are rejected. Bounded Linux execution now uses inherited group confinement, unreaped leader cleanup and descriptor-relative source copying (ADR0006, task1.4 pending independent review); general malicious-native-tool filesystem/network isolation remains outside this fixed trusted-tool profile.
 
-The enhanced inventory hashes source-tree files conservatively, excluding `.git` and `target`, plus frozen scope, resolved tool paths/version output and declared ambient `CARGO_*`, `RUST*`, `PATH`, `HOME` identity. Keys/lengths/bytes are ordered deterministically. Raw identity/environment bytes are not exported. Lock/config/toolchain/source changes cannot be represented as the old manifest-only digest. This is not a full repository identity, candidate binding, or controller cache key.
-
-Execution uses fixed Cargo/rustc paths resolved outside the candidate, `env_clear`, an empty temporary HOME/CARGO_HOME, no stdin, offline no-deps metadata and a private copied project. Candidate Cargo config, temporary-ancestor Cargo config, absolute/escaping manifest paths, symlinks and special files are rejected. The current declaration profile does not honor candidate toolchain switching, Cargo aliases, wrappers, arbitrary scripts, target/feature activation, or external path dependencies. Nonmember dependencies contained inside the copied tree retain declaration provenance and produce no member edge.
-
-Default per-tool budget: 20 seconds, 8 MiB combined stdout/stderr. Copy budget: 16 MiB per file, 128 MiB total, 10,000 directory/file entries, depth 64. Unix process-group termination and nonblocking pipe reads bound normal tool execution and cleanup. Non-Unix execution is unsupported.
-
-**Security acceptance remains partial:** the copy/validation mechanism is not an OS filesystem sandbox. Controllers must provide immutable input trees and trusted executables/environment; concurrent ancestor-directory substitution and deliberate process-session escapes are not contained. A real hostile-worktree runner needs an OS isolation backend and cgroup/process containment. This host's `bwrap --ro-bind / / --unshare-net -- /bin/true` fails with `setting up uid map: Read-only file system`. Do not use this experimental profile as authenticated protected-merge evidence.
-
-## Language provider decisions
-
-No Java, TypeScript, deep Rust, cycle, layer, domain, object or method capability is published. Requesting their profile names returns unsupported rather than Cargo-complete coverage.
-
-| Candidate | Actual evaluation | Decision |
-|---|---|---|
-| TypeScript compiler API 5.9.3 | Real pinned npm package; resolves `@core/*` alias to a cross-folder type; preserves two method overload signatures; nonliteral dynamic import is explicitly unknown | Preferred candidate for a future semantic adapter; evaluation fixture only, no production provider |
-| Java bytecode/ArchUnit | OpenJDK runtime 21.0.12.1 present; `javac` absent from PATH | No adapter/version selected; bytecode compiler, license/dependency study and reflection coverage fixture remain required |
-| Rust symbol index | Rust/cargo 1.99.0 available; rust-analyzer shim reports component absent | No symbol-index adapter selected; module/type/method, cfg/features/target, macro and dispatch matrix remains required |
-
-The TypeScript fixture is `fixtures/languages/typescript`, with exact package and npm lock integrity. Source: [official npm 5.9.3 metadata](https://registry.npmjs.org/typescript/5.9.3), license Apache-2.0, package unpacked size 23,625,066 bytes, declared Node requirement >=14.17. Tested on Node 24.19.0. Local compiler run: 1.296 seconds and 294,048 KiB peak RSS (single small fixture, not a bound or benchmark). The Rust runner's input budget is not a JavaScript process-memory limit. Project references, unresolved aliases, package export conditions, cross-language symbol IDs and production resource containment still need executable acceptance matrices.
-
-Reproduce with `npm ci --ignore-scripts --no-audit --no-fund --cache=/tmp/archguard-npm-cache --prefix fixtures/languages/typescript`, then `npm test --prefix fixtures/languages/typescript`. Package installation does not publish the adapter or authorize anything.
+The existing TypeScript evaluation fixes npm5.9.3 (Apache-2.0) with package/lock integrity in fixtures/languages/typescript. Its earlier actual run on Node24.19.0 took1.296seconds and294048KiB peak RSS, an observation rather than a resource guarantee. No JavaScript production adapter or project-reference acceptance is implied. Rust compiler availability does not imply rust-analyzer capability.
 
 ## Output safety tightening after review
 
@@ -53,10 +39,20 @@ The literal filesystem root is escaped with `glob::Pattern::escape` before joini
 
 A declared member pattern with no matches, a matched member without Cargo.toml, or any manifest/glob parsing failure now makes output preparation fail closed, including for newly requested output paths. No artifact is published on that failure. Existing destinations whose safety cannot be established are retained with an explicit error; consumers must use the current status. This intentionally tightens publication behavior for invalid/unresolved input scope. Legacy scans without requested file outputs retain their existing analysis behavior.
 
-## Typed language model (task 2.1, partial)
+## Frozen in-memory language model
 
-`domain::model` exposes the in-memory model version `archguard.language-model/v1alpha1`. `SymbolId` is a structural tuple of language, module, owner, Module/Type/Method kind, name and provider-issued canonical signature. Methods require a signature, so overloads remain distinct; signature normalization is the future provider's responsibility. Location is separate from identity. This model is scoped to one observation/profile; IDs alone are not cross-snapshot evidence or a cache key.
+`archguard.language-model/v1alpha1` remains the existing model; no wire schema or cross-language resolver was invented. SymbolId structurally separates language/module/owner/kind/name/canonical signature. JVM descriptors now supply real Java method identity, preserving overloads and generated binary methods. SourceSpan identifies snapshot-relative one-based line/column positions with exclusive end; Java spans refer to actual native capture records, not fabricated Java source lines. Confirmed endpoints must be registered. Unknown relations preserve source and reason without guessed targets, and cannot be cleared by marking scope complete. Models remain scoped local provider observations, not authentication or cross-candidate authority.
 
-`SourceSpan` uses a nonempty snapshot-relative slash path and one-based line/column positions with an exclusive end. The observation keeps source-bearing confirmed edges separate from unknown relations, which have a source and reason but no invented target. Endpoint registration, language consistency and duplicate symbol checks reject malformed local models. Completeness starts false per relation; even an explicit provider scope declaration cannot erase an unknown relation. Such declarations remain unauthenticated provider claims, not evidence of protected required-scope satisfaction.
+## Java21 bytecode profile — tasks2.1/2.2 submitted for review
 
-This slice is not a wire format, semantic indexer, cross-language edge resolver, production coverage certificate or GE evidence adapter. It adds no supported language capability. Provider-specific configuration, frozen required inventory, resource containment, index provenance and reviewed ADRs are still needed for full task 2.1 acceptance and tasks 2.2–2.4.
+`JavaToolchain::freeze(jdk_home)` requires the exact local Debian OpenJDK21.0.12.1 installation pinned in fixtures/languages/java/jdk-profile.json (release,java,javac,lib/modules and libjvm SHA256). The helper uses installed `jdk.jdeps/com.sun.tools.classfile` APIs; this is a deliberately fixed internal API, not a general JDK-compatible release. Its source and actual compiled class digest plus installed tool identity participate in provider ID. Build args/version/result are available through build_log. Native artifact and module hashes are compatibility checks, not producer authentication.
+
+`JavaProfile::freeze` owns required internal binary name→logical module mappings and explicit external type names before extraction. Logical Module symbols do not claim JPMS semantics. Required binary names use portable ASCII slash names, at most64types; modules≤256bytes; external names≤256entries. Java platform references under java/ are explicitly outside the managed type graph unless listed as required. Other references outside required/external scope produce Unknown. Missing required bytecode or unsupported major/minor creates a retained gap; no empty complete result. Only classfile65.0 (Java21, no preview) is supported. JAR/ZIP discovery, module paths, multi-release archives and classloading are not implemented.
+
+The native dependency finder supplies constant-pool, descriptor/signature, superclass/interface and supported declaration references. Methods retain JVM descriptors. Unknown/unsupported attributes (including annotations, records/module metadata and bootstrap metadata not covered by this adapter) conservatively add DependsOn gaps. Reflection, dynamic constants/invokedynamic and native implementations prevent complete DependsOn. Virtual/interface dispatch stays Unknown Calls even when static type references are complete; Calls is never declared complete. This profile does not establish runtime targets, JVM verification, source-language semantics, transitive external library closure or runtime completeness.
+
+Candidate bytecode is copied through the same fd-bound input boundary with a separate artifact policy; Cargo-specific target-directory/config rules are not applied to Java packages. The source digest is an ordered length-framed hash of exact required .class bytes (including unavailable/version markers), frozen scope and tool/helper profile, not a whole-repository digest. Per-class hashes are exposed. Class internal names must match frozen file paths; trailing bytes and malformed parse/tool output fail, rather than changing coverage to success. Source spans identify lines in returned `captures/java-bytecode.tsv`; records refer to actual class names and instruction offsets. Raw capture is retained so line provenance can be inspected.
+
+The helper is compiled with -proc:none; the runtime classpath contains only that trusted helper. Candidate classes are never loaded or executed, even static initializers. Java environment is cleared, input is explicit classfile paths, no candidate JVM options/agents/processors/scripts are accepted. Resource profile:512KiB/class,4MiB copied input,256directory/file entries,depth32,64required classes;128MiB heap/64MiB metaspace/2active CPUs/SerialGC;20seconds per invocation and1MiB combined output. Parsed native structures are capped at8192constant-pool entries,256methods and512fields/class;4096native records. Limits are checked before dependency/output expansion; JVM caps bound the underlying parser allocation. No OS-wide memory/process-count guarantee is implied.
+
+See ADR0007 for exact library/license and native capture provenance. Valid complete scoped type graphs can satisfy local system rules; missing/dynamic/unsupported coverage remains partial/BLOCK. This library adapter does not add a Java CLI, GE envelope, production identity or release. TypeScript and Rust adapters remain unsupported.

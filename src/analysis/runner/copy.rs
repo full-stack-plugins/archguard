@@ -47,9 +47,11 @@ pub(super) fn tree(
     destination: &Path,
     budget: &Budget,
     started: Instant,
+    cargo: bool,
 ) -> Result<(), Failure> {
     State {
         budget,
+        cargo,
         started,
         bytes: 0,
         entries: 0,
@@ -58,6 +60,7 @@ pub(super) fn tree(
 }
 struct State<'a> {
     budget: &'a Budget,
+    cargo: bool,
     started: Instant,
     bytes: u64,
     entries: usize,
@@ -80,7 +83,7 @@ impl State<'_> {
         for entry in fs::read_dir(format!("/proc/self/fd/{}", dir.as_raw_fd())).map_err(input)? {
             self.deadline()?;
             let name = entry.map_err(input)?.file_name();
-            if name == ".git" || name == "target" {
+            if name == ".git" || (self.cargo && name == "target") {
                 continue;
             }
             self.entries += 1;
@@ -147,6 +150,7 @@ mod tests {
         let budget = Budget::default();
         State {
             budget: &budget,
+            cargo: true,
             started: Instant::now(),
             bytes: 0,
             entries: 0,
