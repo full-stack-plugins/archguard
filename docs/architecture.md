@@ -81,7 +81,7 @@ CLI 和示例见 [README](../README.md) 与 [测试](../tests/integration.rs)。
 
 ## 5. 规则、证据、决策与信任边界
 
-同一 Guard Protocol v1alpha1 用 GuardContract、GuardFacts、GuardReport 表达约束、事实和报告；完整分析声明只对**该分析器公布的 scope**有效。必需扫描失败、工具丢失或只分析了部分源码，状态必须 INDETERMINATE，最终 BLOCK；不能把环境错误冒充目标代码的架构违规。
+同一 Guard Protocol v1alpha1 用 GuardContract、GuardFacts、GuardReport 表达约束、事实和报告；完整分析声明只对**该分析器公布的 scope**有效。必需扫描不完整但能形成合法 partial facts 时，规则状态为 INDETERMINATE，最终 BLOCK；无法形成有效事实的输入/执行故障没有有效决策。当前 CLI 将 metadata 故障转换为 partial/BLOCK；未来集成适配器须区分工具崩溃/超时的 error 与已完成局部分析，不能把环境错误冒充目标代码的架构违规。
 
 模式 `enforce`、`review`、`advise` 表示处置策略，不表示规则精度。架构风险不能靠模型置信度升级为 ENFORCE；有审批例外时保留原始 Finding，记录有时限的可验证例外。
 

@@ -13,7 +13,7 @@
 | TypeScript | **规划** dependency-cruiser + TypeScript compiler API | 模块/类型关系，跨包路径别名要精确解析 |
 | Rust 深度语义 | **规划** rust-analyzer/编译器数据或 SCIP 索引 | 类型/方法/调用关系；宏和 cfg/feature 限制须披露 |
 | 通用结构 | **规划** ast-grep/Tree-sitter | 结构匹配不是完整类型语义或运行时调用图 |
-| 策略 | **规划** GuardEngine OPA 适配器 | REGO 执行已批准规则，不重写 AST |
+| 策略 | **远期可选，尚未选定** OPA/Rego 适配 | 需 GuardEngine 独立 ADR、确定性/资源与安全评审；非当前能力或接入前提 |
 | CLI/MCP/CI | **已有** `archguard check` CLI；**规划** rmcp、Action | 每项接口独立发布/验证 |
 
 首版不要把所有语言强制塞进一个 AST API。各语言提取**同一标准化语义事实**和精确覆盖声明，专业规则以语言 capability 检查可执行性，不支持/不完整则 UNKNOWN。
@@ -73,7 +73,7 @@ spec:
 
 1. **Discover**：检查项目语言、构建系统、模块、features/targets、可用索引器；只读，不能启动未经授权的构建脚本。
 2. **Freeze Scope**：从批准的 Architecture Contract 取得必查边、模块、符号和义务；分析器必须声明可覆盖范围。
-3. **Extract**：分语言解析，并同时报告每一个未解析模块/文件/调用范围；工具崩溃与不支持为 partial。
+3. **Extract**：分语言解析，并同时报告每一个未解析模块/文件/调用范围；不支持的范围如能形成合法事实则声明 partial；真实崩溃/超时在目标集成层为 error、decision=null，取消为 cancelled。保留已获得的局部诊断，不伪造完成决策。
 4. **Normalize**：跨平台路径归一，按稳定顺序生成事实；原生诊断和来源位置不能丢失。
 5. **Evaluate**：确定性规则可 ENFORCE；领域/设计启发式只 REVIEW；缺强制能力或覆盖不足无法 ALLOW。
 6. **Design Diff**：基线、候选依赖图和公开 API 差异，关联相应 Requirement/ADR/TestId。
@@ -116,7 +116,7 @@ MCP 未来暴露 doctor/scan/explain/diff/impact 的只读检查能力；报告�
 - 范围边界：对只读分析器限制访问目录，符号链接逃逸、外部路径和非预期构建脚本需要额外授权或阻断。
 - 事实可靠性：source span、摘要和输入树绑定；缓存以语言工具/规则/源码哈希组合键控。
 - 输出安全：日志限制大小、截断声明、敏感源码脱敏；不能执行从代码注释或模型报告中提取的指令。
-- 超时和取消：子进程资源预算、逐分析器超时、失败事实 partial；不可将工具失败降级为通过。
+- 超时和取消：目标适配器施加子进程资源预算与逐分析器超时；超时/崩溃为 error、decision=null，取消为 cancelled。局部事实或历史 BLOCK 报告只作诊断工件，不冒充已完成运行。当前 CLI 的 metadata 故障仍按第 9 节返回 partial/BLOCK，不在文档变更中改写既有行为。
 - Provenance：本地 SHA-256 一致性不是受信供应链 attestation；签名、可信运行身份及权限控制后续实施。
 
 ## 8. 实施计划与真实验收
