@@ -1,7 +1,12 @@
 {
   "commit": "a47ae91811f2f31f9d6438f382affbccd9cf4426",
   "files": {
+    "Cargo.lock": "dcc7bfffdfccc2304e2800bfc94fced7e94a44703696dcd101393314683960dc",
     "Cargo.toml": "91e8a1fc5c5fc6c8802264dea1616d5be76835ec359379a542e5efa8e4d5c46a",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "NOTICE": "bb76e10e129f4cd0dca6267b67bb5ee1ca76cf9d7043446077fbfe6f3ba5a520",
+    "README.md": "cd8f677fb1eeee0d12257742d340cefb639a4f733dd3a9a6559412789475765b",
+    "SOURCE_PIN": "a0ff94adc6544e27854b974627b6f9f0e41efc17c1dca67b2d801d19be51dd22",
     "src/analyzer.rs": "50919f1e462da568484ff7a5bc94deb91fbdcea932e53fd3f212b49d916b291e",
     "src/engine.rs": "346cbc4d316b909311fcd00c0f0129eb4e0aec2942c5dbcbebf9eec15c9a6d0b",
     "src/error.rs": "aee9704ea5aec3344210c5ec82f4a77532eafe5fdd1078dccc8d03d4c101429b",

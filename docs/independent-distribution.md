@@ -28,7 +28,10 @@ standalone published Cargo crate. `python3 scripts/package-core.py /tmp/core.tar
 creates the independently buildable **source distribution**, rewrites only that
 manifest's GE path to `vendor/guardengine`, includes Cargo.lock, Apache-2.0 license,
 GE NOTICE, source hashes and package SHA256SUMS, and excludes the optional package.
-It rejects changed GE bytes and symlinks. Registry dependencies resolve using the
+It rejects symlink inputs before copying (and rechecks the staged copy), changed
+GE bytes, and any GE file outside the exact hashed source/license/provenance
+closure, including an unlisted automatic `build.rs`. Boundary regressions run with
+`python3 scripts/test_package_core.py`. Registry dependencies resolve using the
 lockfile; an offline registry vendor directory is not included.
 
 Unpack into a new directory with no sibling repositories, then run:
