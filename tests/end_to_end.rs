@@ -120,7 +120,7 @@ fn actual_cargo_four_stage_rollout_preserves_required_check_and_history() {
     assert!(store.current(&target).is_none());
     assert_eq!(store.history(&target).len(), 1);
     assert_eq!(bytes(&b).unwrap(), original);
-    let output = serde_json::json!({"profile":"cargo-declarations-v1","authority":"local-fixture-only","native":"actual CargoWorkspaceAnalyzer","binding":b.envelope.binding,"capabilities":archguard::integration::trust::CAPABILITIES,"artifacts":b.envelope.artifacts,"stages":observations,"disabled":disabled,"rollback":rollback,"revoked":revoked,"retained_history":store.history(&target).len(),"original_bytes_unchanged":true,"late_publish_rejected":true});
+    let output = serde_json::json!({"profile":"cargo-declarations-v1","authority":"local-fixture-only","native":"actual CargoWorkspaceAnalyzer facts/completeness parity; not CLI report parity","bundle":b,"nativeFacts":native,"protectedPolicy":p,"binding":b.envelope.binding,"capabilities":archguard::integration::trust::CAPABILITIES,"artifacts":b.envelope.artifacts,"stages":observations,"disabled":disabled,"rollback":rollback,"revoked":revoked,"retained_history":store.history(&target).len(),"original_bytes_unchanged":true,"late_publish_rejected":true});
     if let Ok(path) = std::env::var("ARCHGUARD_ROLLOUT_CAPTURE") {
         std::fs::write(path, serde_json::to_vec_pretty(&output).unwrap()).unwrap();
     }
