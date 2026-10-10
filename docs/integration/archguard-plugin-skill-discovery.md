@@ -1,4 +1,24 @@
-# ArchGuard-Plugin task 4: host discovery
+# ArchGuard-Plugin task 4: wrapper discovery
+
+## 2026-10-10 correction: missing wrapper source, not a missing host API
+
+The earlier requirement to find a separate native skill API was too broad. The actual ecosystem uses plugin manifests and progressively loaded `skills/<name>/SKILL.md`; an agent can select and read `java-skills/archunit` through those conventions. No new runtime, MCP server, controller or Rust-to-skill API is necessary. Per the confirmed engine/wrapper separation (PAPR-001), `full-stack-plugins/archguard` remains the independent engine; a plugin wrapper is a separate delivery target.
+
+Read-only recheck found:
+
+- `full-stack-plugins/archguard` remote main/tree `566fda92c7186a38e53ac81347ba23e0a8107443` contains the Rust crate and no `skills/`, `.codex-plugin/plugin.json`, `.zcode-plugin/plugin.json` or `kimi.plugin.json`. The retained local engine implementation is `6fbcb9e6c51717a396e6e83ee8cc706b5253d655` before this documentation correction.
+- Exact authenticated `full-stack-plugins/archguard-plugin` lookup returned 404. Organization-scoped repository search returned 19 repositories including `archguard`, `codeguard-plugin` and `flowguard-plugin`, but no `archguard-plugin`. This establishes no accessible exact target, not universal nonexistence of private repositories. The installed-repository query returned unrelated organizations and is not treated as a complete organization inventory.
+- The [organization profile](https://github.com/full-stack-plugins/.github/blob/e0c8b638441915241583cedd4d5c1cc549ccab55/profile/README.md) identifies the three platform manifests and skill directories. [CodeGuard's actual manifest](https://github.com/full-stack-plugins/codeguard-plugin/blob/58ecd1f923609e980dc47266a741f7139471917a/.codex-plugin/plugin.json) registers `"skills": "./skills/"`; its entry skill demonstrates agent-selected routing. These are conventions, not an ArchGuard-specific API.
+- The marketplace [catalog](https://github.com/partme-ai/full-stack-plugins/blob/86071c52c6a59c96f861239e4319650e73d101ba/catalog.json) and generated `.agents/plugins/marketplace.json` contain no ArchGuard entry. No installed ArchGuard path exists under this environment's empty `/workspace/.agents` directory. No marketplace or installation configuration was changed.
+- The completed local provider `java-skills` at `64847f09215e05b4c92946ad365cfeca4d0c63e7` registers `./skills/archunit`. This local, unpushed skill and its verified examples are usable by an authorized agent with that checkout; they are not yet an installed or publicly released ArchGuard plugin.
+
+**Remaining location question:** identify the existing independent wrapper repository/directory, or confirm a new cloud-local `archguard-plugin` directory. Do not require another host API and do not add wrapper manifests to the engine to bypass this boundary. Once the wrapper location is selected, use the existing manifest/skill conventions, preserve provider revision and native build evidence, and verify agent discovery/routing. Actual Codex/ZCode/Kimi installation remains a separate validation claim. No previous Java/core acceptance needs repeating.
+
+The approved route remains: Java + one resolved Maven/Gradle module → load the available registered `archunit` skill → pass project/package scope and existing write authorization → run that skill's native checks → report selected skill revision, diff, command/exit, test discovery/coverage and PASS/VIOLATION/UNVERIFIED. Missing skill, ambiguous module, unauthorized edits and empty coverage must not become PASS; non-Java projects do not select ArchUnit. This is an integration recipe, not a claim that wrapper execution has occurred.
+
+Read-only evidence is retained in the cloud delivery folder `guard-plugin-routing-20261010/discovery-evidence.json`. The prior investigation below remains historical; its "native skill API" gate is superseded by this correction.
+
+## Historical 2026-10-09 investigation
 
 Date: 2026-10-09. Outcome: discovery completed; plugin implementation and host end-to-end validation remain BLOCKED because no actual ArchGuard-Plugin host source, manifest, or native skill API was located. This does not block the independent Java skill or Rust core work.
 
