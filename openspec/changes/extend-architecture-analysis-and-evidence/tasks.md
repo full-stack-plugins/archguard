@@ -2,11 +2,14 @@
 
 > **For agentic workers:** 后续执行按任务使用 superpowers:subagent-driven-development 或 superpowers:executing-plans；已获后续实现授权；截至独立复核提交 6e71e725，1.1/1.2/1.3/1.5 共 4/25 项获根协调者验收（restricted Cargo 范围），其余未勾选。
 
+> **当前验收（2026-10-10）：19/25。** 上段 4/25 是历史检查点；本次仅追加登记 3.2（声明/批准静态访问/NotRun）、4.5（支持的 Cargo profile 的实际 GG/FG 消费）、5.1（本地 GE trust ports）、5.4（组合保留证据的本地联合闭环）。其余 2.4、3.3、3.5、5.2、5.3、5.5 仍开放；详见[验收记录与精确缺口](../../../docs/reviews/local-closure-20261010.md)。既有 skills-first 计划已获授权并本地交付，不再等待确认。
+
+
 **Goal:** 从 Cargo 原型演进出范围明确、领域契约驱动、候选绑定且可审计的架构分析。
 
 **Architecture:** ArchGuard 拥有语言提取、领域模型和规则意义；GuardEngine 保持通用 Contract/Rule/Evidence。现有 CLI 使用 legacy profile，增强领域 artifact 与独立 envelope 通过显式接口引入；认证与审批由控制器提供。
 
-**Tech Stack:** 当前 Rust 2024 / Rust 1.85+、Cargo、Serde JSON、sha2、同级 GuardEngine。Java/TS/Rust 索引器、MCP/OPA 适配和信任 provider 均需任务内评估后选定，不视为已安装。
+**Tech Stack（当前）:** Rust 2024 / Rust 1.90+、Cargo、Serde JSON、sha2；核心开发仅依赖同级 GuardEngine，独立源码包 vendor 固定 GE。JDK21 静态字节码和 TypeScript5.9.3 provider 已按显式范围验收；Git/Spec 集成在独立可选 manifest。深度 Rust 索引、统一 MCP/OPA 适配和生产信任 provider 仍未完成，不视为已安装。
 
 **Spec:** [analysis profile](specs/architecture-analysis-profile/spec.md)、[domain evolution](specs/architecture-domain-evolution/spec.md)、[evidence integration](specs/architecture-evidence-integration/spec.md)、[本 change design](design.md)、[架构](../../../docs/architecture.md)、[技术方案](../../../docs/technical-design.md)、[集成草案](../../../docs/integration-contract.md)、[跨仓路线图](../../guard-roadmap.md)。
 
@@ -55,7 +58,7 @@
 **Interfaces:** authenticated external baseline reference → ArchitectureBaseline；baseline + candidate observation → contract findings、TestObligation refs、DesignDiff。基线 authority 为外部输入，不由本域创建审批。
 
 - [x] 3.1 在 `src/domain/baseline.rs` 实现不可变 source/ADR/contract 摘要及 draft/in_review/approved/superseded/revoked 状态（Requirement: Immutable Architecture Baseline）；`tests/baseline.rs` 验证候选改写 accepted/approved=true 不覆盖旧 baseline、修订产生新 digest，批准删除义务也必须有新外部认证记录。
-- [ ] 3.2 在 `src/domain/contracts.rs` 定义 Context/Aggregate/Invariant/Transition 与测试义务映射（Requirement: Approved Domain Object and Method Contracts）；`tests/domain_contracts.rs` 验证合法 AppService 协调与绕过状态入口，只有批准确定规则可阻断，输出义务不声称已执行 TestGuard 测试。
+- [x] 3.2 在 `src/domain/contracts.rs` 定义 Context/Aggregate/Invariant/Transition 与测试义务映射（Requirement: Approved Domain Object and Method Contracts）；`tests/domain_contracts.rs` 验证合法 AppService 协调与绕过状态入口，只有批准确定规则可阻断，输出义务不声称已执行 TestGuard 测试。
 - [ ] 3.3 在 `src/domain/contracts.rs` 加入 Object API/可见性/依赖及 Method signature/side-effect 契约（Requirement: Approved Domain Object and Method Contracts）；`tests/domain_contracts.rs` 验证所有权迁移、纯度/IO 和错误传播的合法/违规/缺覆盖三类，启发式长度/名称建议只 review/advise。
 - [x] 3.4 在 `src/domain/baseline.rs` 和拟新增 `src/integration/trace.rs` 消费 SG-BASELINE 的 Requirement/ADR/TestObligation 稳定引用（Requirement: Immutable Architecture Baseline）；`tests/baseline.rs` 验证失效/缺失/跨 requirement 引用被拒绝且 basic Cargo scan 不依赖 SpecGuard 可用性；该互操作部分等待 SG-BASELINE 和 GE-CONTRACT/ADAPTER。
 - [ ] 3.5 在 `src/domain/diff.rs` 与 `src/analysis/codegraph.rs` 实现 baseline/candidate API/所有权/方法差异及显式未知消费者（Requirement: Source Bound Design Diff）；`tests/design_diff.rs` 覆盖重命名、旧索引、动态分派和跨任务共享 API，断言来源/缺口可追溯；先验证外部索引格式，不假定插件存在。
@@ -69,17 +72,17 @@
 - [x] 4.2 在 `src/integration/evidence.rs` 实现 pre-binding diagnostic 与绑定后 completed/error/cancelled（Requirement: Bound Execution State and Diagnostics）；`tests/execution_state.rs` 验证缺 OID 无 envelope、工具失败/取消 null decision、有效 partial 为 BLOCK、旧输出不可冒充当前结果，并回归 legacy metadata partial 行为。
 - [x] 4.3 在 `src/integration/binding.rs` 定义全量 immutable binding、attempt runId、dedup key 与 compare-and-set 发布（Requirement: Immutable Candidate Isolation and Invalidation）；`tests/candidate_binding.rs` 模拟两个 requirement、重复尝试、迟到旧完成，断言 runId 独立、相同提取可缓存但不能跨义务/候选满足。
 - [x] 4.4 在 `src/integration/binding.rs` 消费 GitGuard 的只读候选解析并绑定实际对象格式（Requirement: Immutable Candidate Isolation and Invalidation）；`tests/candidate_binding.rs` 覆盖 synthetic queue candidate、base/成员变化和不同对象格式，旧 head/旧 queue 报告均不能满足新候选；不新增 Git 写权限。
-- [ ] 4.5 在 `src/integration/evidence.rs` 发布 AG-EVIDENCE artifact 集合和 explicit capability profile（Requirement: Separate Versioned Architecture Evidence）；`tests/integration_schema.rs` 用 GitGuard/FlowGuard 消费 fixture 验证 missing coverage/artifact、未支持 domain capability 不降级通过，收录真实 contract/facts/report/domain 摘要引用。
+- [x] 4.5 在 `src/integration/evidence.rs` 发布 AG-EVIDENCE artifact 集合和 explicit capability profile（Requirement: Separate Versioned Architecture Evidence）；`tests/integration_schema.rs` 用 GitGuard/FlowGuard 消费 fixture 验证 missing coverage/artifact、未支持 domain capability 不降级通过，收录真实 contract/facts/report/domain 摘要引用。
 
 ## 5. Trusted Operation, Interfaces and Release — GE-TRUST / GE-RELEASE 按阶段进入
 
 **Surfaces:** 拟新增 `src/integration/{trust,audit,mcp}.rs`、`tests/{trust,interface_parity,end_to_end}.rs`，未来更新 `.github/workflows/ci.yml`、`Cargo.toml` 与发布文档。
 **Interfaces:** external authenticated evidence/approval ports → derived eligibility + append-only audit；read-only CLI/library/MCP 共用分析服务。无签发审批/签名 key/ref-write API。
 
-- [ ] 5.1 在 `src/integration/trust.rs` 对接 GE-TRUST ports，验证 producer、批准基线/例外范围、期限/撤销及允许 evidence URI（Requirement: Authenticated Architecture Evidence Audit）；`tests/trust.rs` 验证伪造、服务不可用、过期/撤销、策略变弱和自报 signed 字段均不授予资格，REQUIRE_APPROVAL 及 partial 原报告不变。
+- [x] 5.1 在 `src/integration/trust.rs` 对接 GE-TRUST ports，验证 producer、批准基线/例外范围、期限/撤销及允许 evidence URI（Requirement: Authenticated Architecture Evidence Audit）；`tests/trust.rs` 验证伪造、服务不可用、过期/撤销、策略变弱和自报 signed 字段均不授予资格，REQUIRE_APPROVAL 及 partial 原报告不变。
 - [ ] 5.2 在 `src/integration/audit.rs` 及受保护 CI 配置实现脱敏审计、隔离凭据/策略和 controller attestation 引用（Requirement: Authenticated Architecture Evidence Audit）；`tests/trust.rs` 检查真实候选/规则摘要和失效因果可追溯、分析进程没有签名/merge credential；先决定存储保留期/provider，不把本地 verify 当认证；controller attestation 引用不是签名实现，旧 signed-attestation TODO 只有后续独立签名 change 的真实签发/验签证据齐备才可关闭。
 - [ ] 5.3 在 `src/integration/cli.rs`、`src/integration/mcp.rs` 共享只读 doctor/scan/explain/diff/impact 的明确 capability contract（Requirement: Read Only Architecture Interfaces）；`tests/interface_parity.rs` 比较同输入输出/错误/预算语义并拒绝 self-approval/ref-write，先冻结 flags 与 MCP 库后才发布可运行命令；OPA 仅决策可选适配，不执行不可信脚本。
-- [ ] 5.4 在 `tests/end_to_end.rs` 与 `fixtures/integration/queue/` 验证 AG-EVIDENCE 联合流程（Requirements: Immutable Candidate Isolation and Invalidation; Phased Architecture Release and Rollback）；相关 SG/AG/CG/TG/GG/GE-TRUST gates 后测试双 requirement、精确队列候选、native CodeGuard parity、覆盖缺失、审批到期/撤销、迟到完成与关闭适配器，所有错误保持门禁未满足。
+- [x] 5.4 在 `tests/end_to_end.rs` 与 `fixtures/integration/queue/` 验证 AG-EVIDENCE 联合流程（Requirements: Immutable Candidate Isolation and Invalidation; Phased Architecture Release and Rollback）；相关 SG/AG/CG/TG/GG/GE-TRUST gates 后测试双 requirement、精确队列候选、native CodeGuard parity、覆盖缺失、审批到期/撤销、迟到完成与关闭适配器，所有错误保持门禁未满足。
 - [ ] 5.5 在 GE-RELEASE 后更新 `Cargo.toml`/CI 为独立固定 GuardEngine 发行并发布兼容矩阵、迁移与回滚记录（Requirement: Phased Architecture Release and Rollback）；`tests/cli_compatibility.rs` + shadow fixture 逐阶段验证 advisory→shadow→opt-in protected→enforce，回退保留 legacy 与旧证据；关闭新 profile 不取消必查义务，仅凭固定源码开发不能宣称生产发布完成。
 
 ## Dependency and Acceptance Handoff

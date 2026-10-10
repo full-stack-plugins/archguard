@@ -1,6 +1,6 @@
 # Local approved domain declarations and static type access
 
-Task3.2 is a **partial** implementation. Context/Aggregate/Invariant/Transition declarations and test-obligation mapping are available, together with actual Java static dependency evaluation. Complete method-call/state-transition semantics remain unsupported; this slice does not lower the original requirement or enable task3.3 method side-effect contracts.
+Historical slice assessment: task3.2 was recorded as a **partial** implementation (superseded for checklist acceptance by the dated clarification below). Context/Aggregate/Invariant/Transition declarations and test-obligation mapping are available, together with actual Java static dependency evaluation. Complete method-call/state-transition semantics remain unsupported; this slice does not lower the original requirement or enable task3.3 method side-effect contracts.
 
 `DomainContract::freeze` accepts explicit stable SymbolIds, context ownership, aggregate entry/internal-state types, invariants, transition method/state declarations and a frozen actual provider profile. It does not infer responsibilities from AppService/Aggregate class names or similar method names. Input admission occurs before hashing/cloning:1MiB encoded domain metadata,64contexts,128aggregates/invariants/transitions,256members/context and256-byte declaration IDs. Declarations sort by ID before computing the specification digest. HeuristicStateAccess cannot use Enforce.
 
@@ -15,3 +15,9 @@ Transitions record explicit from/to state and canonical method identity for test
 The serialized `archguard.domain-evaluation/v1alpha1` contains the actual GE contract/facts/report, finding witnesses and versioned local test-obligation references. Their identity derives from the frozen specification and declaration, and each output binds baseline/source digests. `TestExecution::NotRun` is mandatory; this is a controller input for future TestGuard consumption, not a TG test result, approval, executed coverage or end-to-end TG integration claim. No new engine envelope, actual Git candidate provenance, production issuer, Java CLI, or global source scope is supplied here.
 
 Validation uses real fixed JDK21 javac/classfile extraction of legal AppService.cancelTask→Aggregate.cancel type references and direct State access, missing class coverage, unavailable transition semantics, fresh authority failure/revoke/expiry, altered protected severity, heuristic restriction, input budget and deterministic ordering. Actual Java methods are compiled but never executed by this test/extractor.
+
+## Acceptance clarification — 2026-10-10
+
+The coordinator accepts original task **3.2** for its explicit Context/Aggregate/Invariant/Transition declarations, approved deterministic Java static-access rule and digest-bound `NotRun` obligation mapping. Retained real Java legal/bypass tests and independent core evidence cover that task. The earlier interpretation requiring runtime transition execution or actual TestGuard consumption was broader than this checklist item and is not a prerequisite to its closure. This changes acceptance bookkeeping, not executable semantics or the historical review findings.
+
+`TransitionEntry` still yields unsupported coverage and partial/BLOCK; no runtime state behavior or executed TestGuard result is claimed. Task **3.3** remains open for object/API/visibility and method side-effect contracts. See the [local closure review](../reviews/local-closure-20261010.md) for evidence and remaining boundaries.

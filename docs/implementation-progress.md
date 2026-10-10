@@ -1,5 +1,7 @@
 # ArchGuard implementation ledger
 
+Current acceptance: **19/25** as of 2026-10-10. See the [current closure review](reviews/local-closure-20261010.md) and the dated final entry below. Earlier checkpoints are preserved chronologically and are not the current status.
+
 Base: 9ed191acf3c3b1f9c0ca9edf3d0621b6a7c53f04. Local branch only. Root acceptance checkpoint: 9/25 tasks accepted (1.1, 1.2, 1.3, 1.5, 2.5, 3.4, 4.1, 4.2, 4.4); restricted Cargo scope only. Producer 01f2f13 independently accepted for 4.1 in external archguard-producer-independent-review.md. Tasks 4.2/4.4 were independently accepted for the actual Git wrapper after acf6116; the older public candidate context remains unverified. Task 1.4 remains partial. New task 2.1 typed model slice is partial and pending review.
 
 | Task | Executable slice / verification | Prerequisite |
@@ -162,3 +164,14 @@ RED: actual SHA-1/SHA-256 old ALLOW finishing after newer BLOCK. Follow with rea
 ## Independent acceptance of existing attempt/CAS — 2026-10-09
 
 Task4.3 is accepted for the existing process-local implementation at `d6c8235d` (implementation `e77e4c9a`); current roadmap count is **15/25**. Fixed-source independent verification ran 11 actual attempt/concurrency tests, two sealed-completion compile-fail tests and focused Clippy with zero failures. Exact sources and logs are indexed in cloud ledger `archguard-attempt-resume-independent-review.md` and `archguard-attempt-resume-source.json`. Full bindings, independent run IDs, requirement/worktree isolation and late-publication rejection were checked; history remains metadata with `eligible=false`, not producer/approval authority. No extraction cache or durable restart claim is added. This registers already committed functionality only; the separate skills-first architecture plan remains awaiting user confirmation.
+
+
+## Local acceptance reconciliation — 2026-10-10
+
+The coordinator accepts 3.2, 4.5, 5.1 and 5.4, bringing the original checklist from 15/25 to **19/25**. The [closure review](reviews/local-closure-20261010.md) records exact scope, source pins, retained execution evidence and the six open tasks (2.4, 3.3, 3.5, 5.2, 5.3, 5.5). Task3.2 closes declarations, approved Java static access and NotRun mappings; the earlier runtime/TG execution prerequisite was broader than its literal task and is superseded, while unsupported TransitionEntry behavior and 3.3 remain open. AG4.5/5.1 close the supported Cargo consumer/trust profile; AG5.4 combines actual AG→FG rollout evidence with retained GE4.4 and CG parity evidence.
+
+Current accepted AG consumer pin is `ba7396886a2ed5084a8a3eff474160d95c94fb25`, with FG `8b27b4e7be7f96d50533aa769e9554a39f6b7f94`. The independent optional GG bridge review closed its changed-action policy-digest regression. Its changes do not alter the core AG6b24→FG joint evidence. Production authority/retention, host installation and production release remain separate unverified claims.
+
+The skills-first plan referred to as awaiting confirmation in earlier entries was subsequently authorized and delivered locally: independent core source packaging, optional Git/Spec integration, and accepted native Java provider `fad6395` / wrapper `1ed1beb`. JDK21, corrected TypeScript5.9.3 and immutable baseline acceptance are current; their earlier pending-review entries remain history. Core no longer requires GG/SG, native CLI remains Cargo-only, static obligations remain NotRun, and observed Design Diff does not establish complete public API/behavioral semantics. This entry records documentation reconciliation and source/evidence inspection, not another test-matrix run.
+
+The subsequent source follow-up `fb93ee44a4f031ab4bda764cce93d652b40ff777` adds actual interface/virtual-dispatch diff provenance coverage and a scoped stale-index diagnostic; the author records 4 focused passing tests. Public API visibility observation remains the concrete task3.5 gap, so no additional checkbox closes. See the [follow-up evidence and current gaps](reviews/local-closure-20261010.md).

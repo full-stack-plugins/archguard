@@ -1,6 +1,6 @@
 {
   "guardengine": {
-    "commit": "a47ae91811f2f31f9d6438f382affbccd9cf4426",
+    "commit": "3cda1266488f10ea5afe689a3ff92884040b3107",
     "files": {
       "Cargo.toml": "91e8a1fc5c5fc6c8802264dea1616d5be76835ec359379a542e5efa8e4d5c46a",
       "src/analyzer.rs": "50919f1e462da568484ff7a5bc94deb91fbdcea932e53fd3f212b49d916b291e",
