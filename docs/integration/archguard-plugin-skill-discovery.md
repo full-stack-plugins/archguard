@@ -1,5 +1,17 @@
 # ArchGuard-Plugin task 4: wrapper discovery
 
+## 2026-10-10 local wrapper delivery
+
+The already approved implementation scope includes a reversible, independent cloud-local wrapper directory. No further location approval is required. The wrapper now lives at `/workspace/guard-implementation/archguard-plugin`, separate from this Rust engine, on `impl/archguard-plugin-routing-20261010`. It has no remote repository and makes no marketplace changes.
+
+The local package provides three platform-shaped manifests, one `skills/archguard/SKILL.md` entry and a pinned local provider reference to `java-skills/archunit` at `64847f09215e05b4c92946ad365cfeca4d0c63e7`. It introduces no runtime, MCP, controller, state owner or duplicate Java rule implementation. Java builds use their wrappers directly; existing supported engine contracts use the engine's documented CLI.
+
+Fresh agent application followed manifest → entry skill → provider registration/revision/content hashes → Maven and Gradle native checks. Each returned exit 0 and fresh XML with three executed tests, zero failures/errors/skips, and passing import coverage. All 562 tracked provider files were unchanged. Five static discovery/provenance checks passed; the same fresh agent found no important wrapper review blocker. Missing-provider, ambiguous-scope, non-Java, unauthorized-write, stale/empty-test and incomplete-coverage responses were examined as explicitly labeled application scenarios, not repeated native negative builds. Existing full Java/core qualification was not rerun.
+
+Evidence: `/workspace/guard-plugin-routing-20261010/wrapper-application-report.md` and adjacent `wrapper-application-*` raw records. This is a local agent execution profile. Actual Codex/ZCode/Kimi plugin installation and official host schema validation remain **UNVERIFIED**. Codex CLI help is available; ZCode/Kimi executables are absent. No installed-host end-to-end success or public availability is claimed. The provider is an explicit sibling checkout prerequisite, not a self-contained published package.
+
+This delivery supersedes the location blocker below. Historical discovery findings remain useful evidence of why no remote wrapper or marketplace entry was assumed.
+
 ## 2026-10-10 correction: missing wrapper source, not a missing host API
 
 The earlier requirement to find a separate native skill API was too broad. The actual ecosystem uses plugin manifests and progressively loaded `skills/<name>/SKILL.md`; an agent can select and read `java-skills/archunit` through those conventions. No new runtime, MCP server, controller or Rust-to-skill API is necessary. Per the confirmed engine/wrapper separation (PAPR-001), `full-stack-plugins/archguard` remains the independent engine; a plugin wrapper is a separate delivery target.
