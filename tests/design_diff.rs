@@ -492,3 +492,224 @@ fn actual_module_reassignment_is_not_guessed_as_same_ownership() {
         .is_err()
     );
 }
+
+fn compile_dispatch(changed: bool) -> common::Temp {
+    let root = common::Temp::new();
+    std::fs::create_dir(root.0.join("app")).unwrap();
+    std::fs::create_dir(root.0.join("domain")).unwrap();
+    std::fs::write(
+        root.0.join("domain/State.java"),
+        "package domain; public interface State { int value(); }",
+    )
+    .unwrap();
+    std::fs::write(
+        root.0.join("domain/Aggregate.java"),
+        format!("package domain; public class Aggregate implements State {{ public int value() {{ return {}; }} }}", if changed { 2 } else { 1 }),
+    ).unwrap();
+    std::fs::write(
+        root.0.join("app/AppService.java"),
+        "package app; public class AppService { public int viaInterface(domain.State state) { return state.value(); } public int viaVirtual(domain.Aggregate aggregate) { return aggregate.value(); } }",
+    ).unwrap();
+    let out = Command::new(Path::new(JDK).join("bin/javac"))
+        .args([
+            "-J-Xmx128m",
+            "-J-XX:ActiveProcessorCount=2",
+            "-proc:none",
+            "--release",
+            "21",
+            "-g",
+            "-d",
+        ])
+        .arg(&root.0)
+        .args([
+            root.0.join("domain/State.java"),
+            root.0.join("domain/Aggregate.java"),
+            root.0.join("app/AppService.java"),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    root
+}
+
+#[test]
+fn actual_interface_and_virtual_dispatch_diff_retains_native_unknown_provenance() {
+    use sha2::{Digest, Sha256};
+    let old = compile_dispatch(false);
+    let new = compile_dispatch(true);
+    let before = tools().analyze(&old.0, &profile()).unwrap();
+    let after = tools().analyze(&new.0, &profile()).unwrap();
+    let left = SourceIndex::from_java(&before).unwrap();
+    let right = SourceIndex::from_java(&after).unwrap();
+    let model = build(Enforcement::Enforce, InvariantKind::StaticStateAccess).unwrap();
+    let (baseline, policy, authority) =
+        approve_obligations(&model, model.required_obligations().clone(), &left);
+    let out = compare(
+        &left,
+        &right,
+        left.identity(),
+        right.identity(),
+        &baseline,
+        &policy,
+        &authority,
+        50,
+        &[],
+    )
+    .unwrap();
+    assert_ne!(
+        left.identity().source_digest,
+        right.identity().source_digest
+    );
+    assert_eq!(out.baseline_index, left.digest());
+    assert_eq!(out.candidate_index, right.digest());
+    assert!(out.changed_classfiles.contains(&"domain/Aggregate"));
+    assert!(
+        out.unknowns
+            .contains(&"dynamic dispatch and complete Calls consumers unavailable")
+    );
+    assert!(
+        out.unknowns
+            .contains(&"native unresolved relations retained in referenced index")
+    );
+    for (analysis, index) in [(&before, &left), (&after, &right)] {
+        assert_eq!(index.identity().source_digest, analysis.source_digest());
+        assert_eq!(
+            index.identity().provider_profile,
+            tools().provider_id(&profile())
+        );
+        assert_eq!(
+            index.identity().capture_digest,
+            format!("sha256:{:x}", Sha256::digest(analysis.capture()))
+        );
+        let archived: serde_json::Value = serde_json::from_slice(index.bytes()).unwrap();
+        assert_eq!(
+            archived["unknowns"],
+            serde_json::to_value(analysis.observation().unknowns()).unwrap()
+        );
+        for (name, signature, reason) in [
+            (
+                "viaInterface",
+                "(Ldomain/State;)I",
+                "invokeinterface dispatch unresolved",
+            ),
+            (
+                "viaVirtual",
+                "(Ldomain/Aggregate;)I",
+                "invokevirtual dispatch unresolved",
+            ),
+        ] {
+            let caller = SymbolId::new(
+                Language::Java,
+                "app",
+                "app/AppService",
+                SymbolKind::Method,
+                name,
+                signature,
+            )
+            .unwrap();
+            let unknown = analysis
+                .observation()
+                .unknowns()
+                .iter()
+                .find(|u| u.from == caller && u.reason == reason)
+                .expect("actual native dispatch unknown");
+            assert_eq!(unknown.relation, Relation::Calls);
+            assert_eq!(unknown.source.path(), "captures/java-bytecode.tsv");
+            let line = std::str::from_utf8(analysis.capture())
+                .unwrap()
+                .lines()
+                .nth(unknown.source.start().0 as usize - 1)
+                .unwrap();
+            assert!(line.starts_with("U\t"));
+            assert!(
+                line.contains(
+                    &reason
+                        .as_bytes()
+                        .iter()
+                        .map(|b| format!("{b:02x}"))
+                        .collect::<String>()
+                )
+            );
+            assert!(
+                !analysis
+                    .observation()
+                    .edges()
+                    .iter()
+                    .any(|e| e.relation == Relation::Calls && e.from == caller)
+            );
+        }
+    }
+    if let Some(dir) = std::env::var_os("ARCHGUARD_DIFF_EVIDENCE_DIR") {
+        let dir = std::path::PathBuf::from(dir).join("dispatch");
+        std::fs::create_dir_all(&dir).unwrap();
+        for (name, data) in [
+            ("baseline.capture.tsv", before.capture()),
+            ("candidate.capture.tsv", after.capture()),
+            ("baseline.index.json", left.bytes()),
+            ("candidate.index.json", right.bytes()),
+        ] {
+            std::fs::write(dir.join(name), data).unwrap();
+        }
+        std::fs::write(
+            dir.join("diff.json"),
+            serde_json::to_vec_pretty(&out).unwrap(),
+        )
+        .unwrap();
+    }
+}
+
+#[test]
+fn stale_index_refusal_identifies_frozen_reindex_scope_without_raw_input() {
+    use sha2::{Digest, Sha256};
+    let root = compile(false);
+    let analysis = tools().analyze(&root.0, &profile()).unwrap();
+    let index = SourceIndex::from_java(&analysis).unwrap();
+    let model = build(Enforcement::Enforce, InvariantKind::StaticStateAccess).unwrap();
+    let (baseline, policy, authority) =
+        approve_obligations(&model, model.required_obligations().clone(), &index);
+    let marker = "arbitrary-private-source\nnot-diagnostic-content";
+    let mut expected = index.identity().clone();
+    expected.source_digest = marker.into();
+    expected.provider_profile = marker.into();
+    let error = compare(
+        &index,
+        &index,
+        index.identity(),
+        &expected,
+        &baseline,
+        &policy,
+        &authority,
+        50,
+        &[],
+    )
+    .err()
+    .expect("stale input must refuse comparison");
+    assert!(
+        error.contains("reindex required; scope=entire frozen Java profile"),
+        "{error}"
+    );
+    assert!(
+        error.contains("indexed modules=[\"app\",\"domain\"]"),
+        "{error}"
+    );
+    assert!(
+        error.contains(&format!(
+            "expected identity=sha256:{:x}",
+            Sha256::digest(serde_json::to_vec(&expected).unwrap())
+        )),
+        "{error}"
+    );
+    assert!(
+        error.contains(&format!(
+            "expected provider/profile=sha256:{:x}",
+            Sha256::digest(expected.provider_profile.as_bytes())
+        )),
+        "{error}"
+    );
+    assert!(!error.contains(marker));
+    assert!(!error.contains("arbitrary-private-source"));
+}

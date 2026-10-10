@@ -114,7 +114,22 @@ impl SourceIndex {
             || expected.index_version != INDEX_VERSION
             || expected.model_version != MODEL_VERSION
         {
-            return Err("stale or foreign source index; reindex required".into());
+            let modules = self
+                .data
+                .symbols
+                .iter()
+                .map(|symbol| symbol.id.module())
+                .collect::<BTreeSet<_>>();
+            // Expected identity fields are caller inputs: fingerprints identify the
+            // requested scope without echoing arbitrary source/profile text. The
+            // indexed modules are context, not a claim that a stale index covers
+            // every module required by the expected profile.
+            return Err(format!(
+                "stale or foreign source index; reindex required; scope=entire frozen Java profile; expected identity={}; expected provider/profile={}; indexed modules={}; include all required classes/modules from the expected profile",
+                digest(&bytes(expected)?),
+                digest(expected.provider_profile.as_bytes()),
+                serde_json::to_string(&modules).map_err(|_| "reindex scope serialization")?,
+            ));
         }
         Ok(())
     }
