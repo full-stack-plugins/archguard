@@ -452,3 +452,214 @@ fn exact_optional_candidate_flows_through_core_trust_without_importing_git_into_
     policy.eligibility.binding.requirement_ids = vec!["other-requirement".into()];
     assert!(!consume(bundle, &policy, &FixtureAuthority, 2_000_000_000, None).eligible);
 }
+
+#[test]
+fn gitguard_specialist_consumer_requires_architecture_profile_artifacts_and_coverage() {
+    use archguard::integration::{
+        projection::{EvidenceBundle, bytes},
+        trust::ConsumptionPolicy,
+    };
+    use archguard_git_spec::integration::specialists::{ArchitectureInput, consume};
+    use gitguard::evidence::specialists::{
+        ImmutableArtifactBytes, PreparedSpecialistConsumption, RequiredSpecialist,
+    };
+    use guardengine::integration::{EvidenceProfile, GuardRunEnvelope, eligibility::*};
+    use std::collections::{BTreeMap, BTreeSet};
+    struct Authority;
+    impl AuthorityProvider for Authority {
+        fn verify_producer(
+            &self,
+            e: &GuardRunEnvelope,
+            d: &str,
+        ) -> Result<ProducerRecord, AuthorityError> {
+            Ok(ProducerRecord {
+                principal: "fixture-authority".into(),
+                producer: e.producer.clone(),
+                envelope_digest: d.into(),
+                validity: Validity {
+                    issued_at: 0,
+                    expires_at: 2_100_000_000,
+                    revoked: false,
+                },
+            })
+        }
+        fn verify_approval(&self, _: &str) -> Result<ApprovalRecord, AuthorityError> {
+            Err(AuthorityError::Untrusted)
+        }
+    }
+    let (dir, base, candidate) = fixture("sha1");
+    let repo = Repository::discover(&dir.0, "repo").unwrap();
+    let mut contract = common::evidence::contract();
+    let guardengine::GuardAssertion::ForbidRelation { object, .. } =
+        &mut contract.spec.rules[0].assertion;
+    *object = "agent-job".into();
+    let protected = ProtectedCargoPolicy::freeze(contract, vec![]).unwrap();
+    let candidate = snapshot(&repo, &base, &candidate, &protected);
+    let actual = GitCargoEvidence::prepare(&repo, &candidate, protected)
+        .unwrap()
+        .run(&AtomicBool::new(false))
+        .unwrap();
+    actual.verify(&repo, &candidate).unwrap();
+    let b = actual.cargo();
+    let policy = ConsumptionPolicy {
+        eligibility: EligibilityPolicy {
+            binding: b.envelope.binding.clone(),
+            producer: b.envelope.producer.clone(),
+            required_scopes: b.envelope.coverage.required_scopes.clone(),
+            contract_digest: b
+                .envelope
+                .artifacts
+                .contract
+                .as_ref()
+                .unwrap()
+                .digest
+                .clone(),
+            action: "merge".into(),
+            producer_principals: BTreeSet::from(["fixture-authority".into()]),
+            approval_principals: BTreeMap::new(),
+        },
+        required_capabilities: BTreeSet::from(["cargo.declarations".into()]),
+        required_approvals: BTreeMap::new(),
+    };
+    let required = PreparedSpecialistConsumption::freeze(
+        &repo,
+        &candidate,
+        vec![RequiredSpecialist {
+            id: "archguard".into(),
+            policy: policy.eligibility.clone(),
+            profile: EvidenceProfile::EngineBacked,
+            baseline: None,
+        }],
+    )
+    .unwrap();
+    let artifact_bytes = ImmutableArtifactBytes::new(vec![
+        (
+            b.envelope.artifacts.contract.as_ref().unwrap().clone(),
+            bytes(b.contract.as_ref().unwrap()).unwrap(),
+        ),
+        (
+            b.envelope.artifacts.facts.as_ref().unwrap().clone(),
+            bytes(b.facts.as_ref().unwrap()).unwrap(),
+        ),
+        (
+            b.envelope.artifacts.report.as_ref().unwrap().clone(),
+            bytes(b.report.as_ref().unwrap()).unwrap(),
+        ),
+    ])
+    .unwrap();
+    let original = bytes(b).unwrap();
+    let original_policy = policy.content_digest();
+    let mut capture = vec![];
+    for mutation in 0..6 {
+        let mut bundle = EvidenceBundle::load(&original).unwrap();
+        let mut requested = policy.clone();
+        match mutation {
+            0 => {}
+            1 => {
+                requested
+                    .required_capabilities
+                    .insert("domain.method.purity".into());
+            }
+            2 => bundle.domain = None,
+            3 => {
+                bundle.envelope.coverage.status = guardengine::integration::CoverageStatus::Partial;
+                bundle.envelope.coverage.missing_scopes =
+                    bundle.envelope.coverage.required_scopes.clone();
+                bundle.envelope.coverage.observed_scopes.clear();
+            }
+            5 => requested.eligibility.action = "push".into(),
+            _ => {}
+        }
+        let mut envelopes = BTreeMap::from([("archguard".into(), bundle.envelope.clone())]);
+        if mutation == 4 {
+            envelopes.get_mut("archguard").unwrap().run_id = "different-envelope".into();
+        }
+        let generic = required
+            .consume(
+                &repo,
+                &candidate,
+                &envelopes,
+                &artifact_bytes,
+                &Authority,
+                2_000_000_000,
+                None,
+            )
+            .unwrap();
+        if mutation < 3 {
+            assert!(
+                generic.eligible(),
+                "generic GE evidence does not qualify AG capabilities/domain"
+            );
+        }
+        let result = consume(
+            &required,
+            &repo,
+            &candidate,
+            &envelopes,
+            &artifact_bytes,
+            ArchitectureInput {
+                id: "archguard",
+                bundle: &bundle,
+                policy: &requested,
+            },
+            &Authority,
+            2_000_000_000,
+            None,
+        );
+        if let Ok(ref accepted) = result {
+            assert_eq!(
+                accepted.architecture_result().audit.content_digest,
+                requested.content_digest()
+            );
+            assert_eq!(
+                accepted.specialist_results()["archguard"]
+                    .audit
+                    .content_digest,
+                policy.eligibility.content_digest()
+            );
+        }
+        let mut grant_calls = 0;
+        let mut request_fixture_grant = || {
+            grant_calls += 1;
+        };
+        let satisfied = match result {
+            Ok(ref result) if result.eligible() => {
+                request_fixture_grant();
+                true
+            }
+            _ => false,
+        };
+        assert_eq!(satisfied, mutation == 0, "mutation {mutation}");
+        assert_eq!(grant_calls, usize::from(mutation == 0));
+        assert_eq!(
+            envelopes.keys().cloned().collect::<Vec<_>>(),
+            vec!["archguard"]
+        );
+        capture.push(serde_json::json!({"mutation":mutation,"case":(["supported","unsupported-required-capability","missing-domain-artifact","missing-coverage","selected-envelope-substitution","changed-action-policy"][mutation]),"generic_eligible":generic.eligible(),"combined_consumer_satisfied":satisfied,"downstream_fixture_grant_calls":grant_calls,"required_ids":["archguard"]}));
+    }
+    assert_eq!(bytes(b).unwrap(), original);
+    assert_eq!(policy.content_digest(), original_policy);
+    let envelopes = BTreeMap::from([("archguard".into(), b.envelope.clone())]);
+    assert!(
+        consume(
+            &required,
+            &repo,
+            &candidate,
+            &envelopes,
+            &artifact_bytes,
+            ArchitectureInput {
+                id: "archguard",
+                bundle: b,
+                policy: &policy
+            },
+            &Authority,
+            2_000_000_000,
+            None
+        )
+        .unwrap()
+        .eligible()
+    );
+    if let Ok(path) = std::env::var("ARCHGUARD_GG_CONSUMER_CAPTURE") {
+        std::fs::write(path,serde_json::to_vec_pretty(&serde_json::json!({"profile":"cargo-declarations-v1","authority":"local-fixture-only","actual_bundle":b,"observations":capture,"required_set_unchanged":true,"recovery_eligible":true})).unwrap()).unwrap();
+    }
+}

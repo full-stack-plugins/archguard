@@ -102,3 +102,40 @@ Whole-task acceptance is reviewed against the original tasks; this document does
 not mark absent all-domain, host, joint-consumer or production distribution
 requirements complete. Packaging remains the existing fixed-source distribution,
 not a new public release or signing profile.
+
+## GitGuard specialist consumer composition
+
+The optional `archguard_git_spec::integration::specialists::consume` helper is the
+reusable caller bridge for the Cargo domain profile. GitGuard's generic
+`PreparedSpecialistConsumption` verifies engine-backed evidence and owns the
+unchanged required set; it deliberately does not parse ArchGuard domain artifacts
+or negotiate its capabilities. Calling that generic port alone therefore does
+not establish the architecture profile requirement.
+
+The bridge consumes the actual frozen GG port, requires equality of the selected
+AG envelope, compares GG's selected eligibility-policy audit digest with the exact
+AG `ConsumptionPolicy.eligibility` digest (including action and principals), and
+freshly calls AG trust consumption before returning a usable success. Its typed
+result preserves both the complete AG consumption-policy audit and GG's separate
+GE-policy audit. `eligible()` requires both checks. There is no grant callback or
+new authority/state owner in this API. The protected caller still freezes policy,
+verifies `GitEvidenceBundle` source identity, and invokes its independently
+owned grant/execution port only after success.
+
+The focused optional test produces and verifies real Cargo evidence for a real
+Git candidate, then invokes the actual GG consumer through this bridge. The fixed
+single required Cargo entry is unchanged across supported success, unsupported
+required capability, missing domain artifact, missing coverage, selected-envelope
+substitution and changed-action policy. Every negative leaves the downstream
+fixture grant callback uncalled, and valid original evidence recovers. Generic
+GG eligibility is explicitly shown insufficient for the unsupported capability
+and missing-domain cases. This proves the supported Cargo consumer contract, not
+all-language or hosted joint enforcement.
+
+```sh
+ARCHGUARD_GG_CONSUMER_CAPTURE=/absolute/gg-consumer.json \
+  cargo test --locked --offline --manifest-path integrations/git-spec/Cargo.toml \
+  --test candidate_binding \
+  gitguard_specialist_consumer_requires_architecture_profile_artifacts_and_coverage \
+  -- --exact
+```

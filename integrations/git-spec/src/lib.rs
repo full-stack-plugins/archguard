@@ -5,5 +5,6 @@ pub mod domain {
 pub mod integration {
     pub use archguard::integration::{evidence, projection};
     pub mod binding;
+    pub mod specialists;
     pub mod trace;
 }
