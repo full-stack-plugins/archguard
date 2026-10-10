@@ -4,3 +4,6 @@ pub mod cli;
 pub mod projection;
 
 pub mod evidence;
+
+pub mod rollout;
+pub mod trust;

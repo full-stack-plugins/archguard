@@ -384,3 +384,71 @@ fn ordinary_source_directory_cannot_become_a_verified_candidate_repository() {
     assert!(!dir.0.join(".git").exists());
     assert!(Repository::discover(dir.0.as_path(), "claimed-repository").is_err());
 }
+
+#[test]
+fn exact_optional_candidate_flows_through_core_trust_without_importing_git_into_core() {
+    use archguard::integration::trust::{ConsumptionPolicy, consume};
+    use guardengine::integration::eligibility::*;
+    use std::collections::{BTreeMap, BTreeSet};
+    struct FixtureAuthority;
+    impl AuthorityProvider for FixtureAuthority {
+        fn verify_producer(
+            &self,
+            e: &guardengine::integration::GuardRunEnvelope,
+            d: &str,
+        ) -> Result<ProducerRecord, AuthorityError> {
+            Ok(ProducerRecord {
+                principal: "local-fixture".into(),
+                producer: e.producer.clone(),
+                envelope_digest: d.into(),
+                validity: Validity {
+                    issued_at: 0,
+                    expires_at: 2_100_000_000,
+                    revoked: false,
+                },
+            })
+        }
+        fn verify_approval(&self, _: &str) -> Result<ApprovalRecord, AuthorityError> {
+            Err(AuthorityError::Untrusted)
+        }
+    }
+    let (dir, base, candidate) = fixture("sha1");
+    let repo = Repository::discover(dir.0.as_path(), "repo").unwrap();
+    let mut c = common::evidence::contract();
+    let guardengine::GuardAssertion::ForbidRelation { object, .. } = &mut c.spec.rules[0].assertion;
+    *object = "agent-job".into();
+    let p = ProtectedCargoPolicy::freeze(c, vec![]).unwrap();
+    let s = snapshot(&repo, &base, &candidate, &p);
+    let result = GitCargoEvidence::prepare(&repo, &s, p)
+        .unwrap()
+        .run(&AtomicBool::new(false))
+        .unwrap();
+    result.verify(&repo, &s).unwrap();
+    let bundle = result.cargo();
+    let mut policy = ConsumptionPolicy {
+        eligibility: EligibilityPolicy {
+            binding: bundle.envelope.binding.clone(),
+            producer: bundle.envelope.producer.clone(),
+            required_scopes: bundle.envelope.coverage.required_scopes.clone(),
+            contract_digest: bundle
+                .envelope
+                .artifacts
+                .contract
+                .as_ref()
+                .unwrap()
+                .digest
+                .clone(),
+            action: "merge".into(),
+            producer_principals: BTreeSet::from(["local-fixture".into()]),
+            approval_principals: BTreeMap::new(),
+        },
+        required_capabilities: BTreeSet::from(["cargo.declarations".into()]),
+        required_approvals: BTreeMap::new(),
+    };
+    assert!(consume(bundle, &policy, &FixtureAuthority, 2_000_000_000, None).eligible);
+    policy.eligibility.binding.candidate_oid = base;
+    assert!(!consume(bundle, &policy, &FixtureAuthority, 2_000_000_000, None).eligible);
+    policy.eligibility.binding.candidate_oid = candidate;
+    policy.eligibility.binding.requirement_ids = vec!["other-requirement".into()];
+    assert!(!consume(bundle, &policy, &FixtureAuthority, 2_000_000_000, None).eligible);
+}
