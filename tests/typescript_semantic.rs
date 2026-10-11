@@ -4,12 +4,11 @@ use archguard::{
     domain::model::{Relation, SymbolKind},
 };
 use std::{collections::BTreeMap, path::Path, sync::OnceLock};
-const NODE: &str = "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node";
 fn tool() -> &'static TypeScriptToolchain {
     static TOOL: OnceLock<TypeScriptToolchain> = OnceLock::new();
     TOOL.get_or_init(|| {
         TypeScriptToolchain::freeze(
-            Path::new(NODE),
+            &common::node(),
             &Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("fixtures/languages/typescript/node_modules/typescript"),
         )
@@ -296,7 +295,7 @@ fn global_constructor_and_type_query_keep_actual_cross_file_type_origins() {
 fn prepared_toolchain_does_not_execute_a_replaced_node_path() {
     let t = fixture();
     let copied = t.0.join("node");
-    std::fs::copy(NODE, &copied).unwrap();
+    std::fs::copy(common::node(), &copied).unwrap();
     let compiler = &Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("fixtures/languages/typescript/node_modules/typescript");
     let tools = TypeScriptToolchain::freeze(&copied, compiler).unwrap();

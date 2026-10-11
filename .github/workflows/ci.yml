@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,6 +20,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Prepare and verify pinned native test tools
+        run: bash archguard/scripts/prepare-native-ci.sh "$RUNNER_TEMP/archguard-native"
       - name: Format
         run: cargo fmt --all -- --check
         working-directory: archguard

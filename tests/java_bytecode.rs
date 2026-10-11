@@ -9,10 +9,9 @@ use std::{
     process::Command,
     sync::OnceLock,
 };
-const JDK: &str = "/workspace/guard-toolchain/jdk21/usr/lib/jvm/java-21-openjdk-amd64";
 fn toolchain() -> &'static JavaToolchain {
     static TOOLS: OnceLock<JavaToolchain> = OnceLock::new();
-    TOOLS.get_or_init(|| JavaToolchain::freeze(Path::new(JDK)).unwrap())
+    TOOLS.get_or_init(|| JavaToolchain::freeze(&common::jdk_home()).unwrap())
 }
 fn fixture() -> common::Temp {
     let temp = common::Temp::new();
@@ -25,7 +24,7 @@ fn fixture() -> common::Temp {
         "infra/Store.java",
         "app/NeverRun.java",
     ];
-    let output = Command::new(Path::new(JDK).join("bin/javac"))
+    let output = Command::new(common::jdk_home().join("bin/javac"))
         .args([
             "-J-Xmx128m",
             "-J-XX:ActiveProcessorCount=2",
@@ -329,7 +328,7 @@ fn java_package_named_target_is_not_silently_omitted_by_cargo_copy_rules() {
     let temp = common::Temp::new();
     let src = temp.0.join("Plain.java");
     std::fs::write(&src, "package target; public class Plain { }").unwrap();
-    let status = Command::new(Path::new(JDK).join("bin/javac"))
+    let status = Command::new(common::jdk_home().join("bin/javac"))
         .args(["-J-Xmx128m", "-proc:none", "--release", "21", "-d"])
         .arg(&temp.0)
         .arg(&src)
@@ -356,7 +355,7 @@ fn native_structure_budget_is_checked_before_emitting_a_large_observation() {
     }
     body.push('}');
     std::fs::write(&source, body).unwrap();
-    let output = Command::new(Path::new(JDK).join("bin/javac"))
+    let output = Command::new(common::jdk_home().join("bin/javac"))
         .args(["-J-Xmx128m", "-proc:none", "--release", "21", "-d"])
         .arg(&temp.0)
         .arg(&source)

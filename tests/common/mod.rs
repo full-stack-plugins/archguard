@@ -49,3 +49,22 @@ impl Drop for Temp {
 
 #[allow(dead_code)]
 pub mod evidence;
+
+/// Locate a caller-selected JDK; provider freeze still verifies its exact bytes.
+pub fn jdk_home() -> PathBuf {
+    std::env::var_os("ARCHGUARD_TEST_JDK")
+        .or_else(|| std::env::var_os("JAVA_HOME"))
+        .map(PathBuf::from)
+        .expect("set ARCHGUARD_TEST_JDK or JAVA_HOME to the qualified JDK")
+}
+
+/// Resolve the native executable once; provider freeze verifies its exact bytes.
+pub fn node() -> PathBuf {
+    if let Some(path) = std::env::var_os("ARCHGUARD_TEST_NODE") {
+        return PathBuf::from(path);
+    }
+    std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
+        .map(|dir| dir.join("node"))
+        .find(|path| path.is_file())
+        .expect("set ARCHGUARD_TEST_NODE or put the qualified Node on PATH")
+}

@@ -46,13 +46,33 @@ cargo tree --locked
 
 The isolated distribution test performs these commands and checks the dependency
 tree for GitGuard/SpecGuard. Cargo's downloaded registry/toolchain cache may be
-reused; no repository source path or symlink is used. Real Java tests require JDK
-21; `domain_contracts`/`design_diff` accept `ARCHGUARD_TEST_JDK`. The existing Java
-suite and Node executable retain their tested toolchain locations. TypeScript
-5.9.3 must be installed with `npm ci` in `fixtures/languages/typescript` before
-packaging to include the test compiler and its license/notices. Its path is
-resolved from the unpacked package, never a development checkout. Missing external
-tools fail these tests; a missing tool is not an analysis pass.
+reused; no repository source path or symlink is used. Real Java/TypeScript tests require the exact committed provider tool profiles.
+On Linux x86_64, prepare official Debian OpenJDK 21.0.12.1, official Node
+24.19.0 and npm-locked TypeScript 5.9.3 with:
+
+```sh
+bash scripts/prepare-native-ci.sh /tmp/archguard-native
+export ARCHGUARD_TEST_JDK=/tmp/archguard-native/jdk/usr/lib/jvm/java-21-openjdk-amd64
+export ARCHGUARD_TEST_NODE=/tmp/archguard-native/node-v24.19.0-linux-x64/bin/node
+python3 scripts/verify-native-tools.py
+cargo test --locked --all-targets
+```
+
+Java tests consistently use `ARCHGUARD_TEST_JDK` (or `JAVA_HOME`) for both
+compilation and provider capture. TypeScript tests use `ARCHGUARD_TEST_NODE`
+(or locate Node on `PATH`). These select locations, not compatibility policy:
+archive SHA-256, committed JDK/Node/compiler file hashes and runtime versions
+must all match. The verifier emits actual identity hashes without modifying
+any frozen profile. Debian package hashes come from the recorded official
+package provenance; the Node archive hash is from the official v24.19.0
+SHASUMS256.txt. CI installs into RUNNER_TEMP on ubuntu-24.04 and exports the
+same variables. No JDK/Node binary or cache is committed. Missing or altered
+tools fail; no test is skipped. This preserves the fixed Linux x86_64 profile,
+not qualification of arbitrary JDK distributions or other platforms.
+
+The package's TypeScript compiler is installed by `npm ci --ignore-scripts`
+using its lockfile; its files and license/notices are verified against the
+existing provider profile and resolved within the package.
 
 Fixed GE source: `a47ae91811f2f31f9d6438f382affbccd9cf4426`; Cargo.toml, Cargo.lock
 and src are byte-identical to reviewed source

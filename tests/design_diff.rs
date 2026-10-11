@@ -10,19 +10,12 @@ use guardengine::{
 use std::{
     cell::Cell,
     collections::{BTreeMap, BTreeSet},
-    path::Path,
     process::Command,
     sync::OnceLock,
 };
-const JDK: &str = "/workspace/guard-toolchain/jdk21/usr/lib/jvm/java-21-openjdk-amd64";
 fn tools() -> &'static JavaToolchain {
     static TOOLS: OnceLock<JavaToolchain> = OnceLock::new();
-    TOOLS.get_or_init(|| {
-        JavaToolchain::freeze(Path::new(
-            &std::env::var("ARCHGUARD_TEST_JDK").unwrap_or_else(|_| JDK.into()),
-        ))
-        .unwrap()
-    })
+    TOOLS.get_or_init(|| JavaToolchain::freeze(&common::jdk_home()).unwrap())
 }
 fn profile() -> JavaProfile {
     JavaProfile::freeze(
@@ -101,7 +94,7 @@ fn compile(bypass: bool) -> common::Temp {
     )
     .unwrap();
     std::fs::write(root.0.join("app/AppService.java"),if bypass{"package app; public class AppService { public static void cancelTask() { domain.State.reset(); } }"}else{"package app; public class AppService { public static void cancelTask() { domain.Aggregate.cancel(); } }"}).unwrap();
-    let out = Command::new(Path::new(JDK).join("bin/javac"))
+    let out = Command::new(common::jdk_home().join("bin/javac"))
         .args([
             "-J-Xmx128m",
             "-J-XX:ActiveProcessorCount=2",
@@ -227,7 +220,7 @@ fn actual_rename_and_shared_consumers_never_prove_zero_impact() {
     let path = new.0.join("domain/Aggregate.java");
     std::fs::write(&path, "package domain; public class Aggregate { public static void renamed() { State.reset(); } }").unwrap();
     std::fs::write(new.0.join("app/AppService.java"), "package app; public class AppService { public static void cancelTask() { domain.Aggregate.renamed(); } }").unwrap();
-    let output = Command::new(Path::new(JDK).join("bin/javac"))
+    let output = Command::new(common::jdk_home().join("bin/javac"))
         .args(["-proc:none", "--release", "21", "-g", "-d"])
         .arg(&new.0)
         .args([
@@ -510,7 +503,7 @@ fn compile_dispatch(changed: bool) -> common::Temp {
         root.0.join("app/AppService.java"),
         "package app; public class AppService { public int viaInterface(domain.State state) { return state.value(); } public int viaVirtual(domain.Aggregate aggregate) { return aggregate.value(); } }",
     ).unwrap();
-    let out = Command::new(Path::new(JDK).join("bin/javac"))
+    let out = Command::new(common::jdk_home().join("bin/javac"))
         .args([
             "-J-Xmx128m",
             "-J-XX:ActiveProcessorCount=2",
