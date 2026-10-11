@@ -19,6 +19,24 @@ fetch 'https://deb.debian.org/debian/pool/main/o/openjdk-21/openjdk-21-jre-headl
   e95f36193e45464ac758e5436f940bf3eaecc77de67188275a42104f58aa7674 "$download_root/jre.deb"
 dpkg-deb --extract "$download_root/jdk.deb" "$tool_root/jdk"
 dpkg-deb --extract "$download_root/jre.deb" "$tool_root/jdk"
+# Debian configuration links normally target /etc. Keep extracted packages
+# self-contained without reading or modifying the runner's system configuration.
+python3 - "$tool_root/jdk" <<'PYCONFIG'
+import os
+from pathlib import Path
+import sys
+root = Path(sys.argv[1]).resolve()
+home = root / 'usr/lib/jvm/java-21-openjdk-amd64'
+for link in home.rglob('*'):
+    if link.is_symlink():
+        target = link.readlink()
+        if str(target).startswith('/etc/java-21-openjdk/'):
+            packaged = root / target.relative_to('/')
+            if not packaged.is_file():
+                raise SystemExit(f'missing packaged configuration: {target}')
+            link.unlink()
+            link.symlink_to(os.path.relpath(packaged, link.parent))
+PYCONFIG
 fetch 'https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux-x64.tar.xz' \
   14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647 "$download_root/node.tar.xz"
 tar -xJf "$download_root/node.tar.xz" -C "$tool_root"

@@ -66,7 +66,9 @@ must all match. The verifier emits actual identity hashes without modifying
 any frozen profile. Debian package hashes come from the recorded official
 package provenance; the Node archive hash is from the official v24.19.0
 SHASUMS256.txt. CI installs into RUNNER_TEMP on ubuntu-24.04 and exports the
-same variables. No JDK/Node binary or cache is committed. Missing or altered
+same variables. Debian configuration symlinks are relocated to files from the
+same verified package under the tool directory; the runner's `/etc` is neither
+required nor modified. No JDK/Node binary or cache is committed. Missing or altered
 tools fail; no test is skipped. This preserves the fixed Linux x86_64 profile,
 not qualification of arbitrary JDK distributions or other platforms.
 
