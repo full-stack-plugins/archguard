@@ -1,15 +1,15 @@
 # ArchGuard — 技术方案与实施设计
 
-> 目标版本 V0.2；软件基线 Rust 0.1.0。已实现功能仅限 Cargo workspace 本地直接依赖禁止边检查，其他均为目标设计。
+> 本文保留完整产品技术规划。软件 0.5.0 的已实现范围见 [Java 源码检查](java-source.md)、[架构检查闭环](architecture-loop.md) 和 [项目模型指南](project-model.md)：Java 包/分层/声明类型归属、构建图及模型增量闭环；完整编译器绑定、方法语义及其 Design Diff 仍为目标设计。
 
 ## 1. 技术选型
 
 | 组件 | 已有 / 建议 | 责任及限制 |
 |---|---|---|
 | 核心运行时 | **已有** Rust 2024，Serde/JSON，sha2 | 模块职责与类型语义规则属于 ArchGuard |
-| 规则和报告 | **已有** 依赖同级 GuardEngine 0.1.0，v1alpha1 | 该路径依赖是 PoC，后续升级成固定版本发布 |
+| 规则和报告 | **已有** 同级 GuardEngine 0.2.0，v1alpha1/v1alpha2 | 路径依赖待协调版本化发布 |
 | Rust 包依赖 | **已有** `cargo metadata --no-deps --offline` | 仅 workspace 成员间本地 path 依赖 |
-| Java | **规划** ArchUnit + JVM 字节码/Gradle/Maven 适配 | 架构层和类型依赖，不替代业务规则 |
+| Java/Maven | **已有** 静态 reactor 与 Java 语法包/层/类型归属；**规划** 有效模型、ArchUnit/字节码与 Gradle | 声明图和显式语法引用已覆盖；完整类型绑定/方法语义尚未实现 |
 | TypeScript | **规划** dependency-cruiser + TypeScript compiler API | 模块/类型关系，跨包路径别名要精确解析 |
 | Rust 深度语义 | **规划** rust-analyzer/编译器数据或 SCIP 索引 | 类型/方法/调用关系；宏和 cfg/feature 限制须披露 |
 | 通用结构 | **规划** ast-grep/Tree-sitter | 结构匹配不是完整类型语义或运行时调用图 |

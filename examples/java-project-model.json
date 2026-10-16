@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "project": "sales",
+  "elements": [
+    {"id":"sales","kind":"context","name":"Sales","responsibility":"销售领域"},
+    {"id":"app","kind":"module","name":"App","responsibility":"销售应用","context":"sales","implementation":"io.demo:app"},
+    {"id":"Order","kind":"aggregate","name":"Order","responsibility":"订单生命周期","context":"sales","module":"app","java_type":"io.demo.domain.Order"}
+  ],
+  "relations": [],
+  "java": {
+    "packages": [
+      {"prefix":"io.demo.domain","module":"app","layer":"domain"},
+      {"prefix":"io.demo.infra","module":"app","layer":"infra"}
+    ],
+    "layers": [
+      {"id":"domain","allowed_dependencies":[]},
+      {"id":"infra","allowed_dependencies":["domain"]}
+    ],
+    "forbidden_dependencies": [{"id":"NO_SQL","from":"io.demo.domain","to":"java.sql"}],
+    "include_tests": false
+  }
+}

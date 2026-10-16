@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "project": "sales-project",
+  "elements": [
+    {"id":"sales","kind":"context","name":"Sales","responsibility":"销售业务上下文"},
+    {"id":"root","kind":"module","name":"Reactor","responsibility":"聚合构建","context":"sales","implementation":"io.demo:root"},
+    {"id":"app","kind":"module","name":"Application","responsibility":"编排业务用例","context":"sales","implementation":"io.demo:app"},
+    {"id":"domain","kind":"module","name":"Domain","responsibility":"封装领域规则","context":"sales","implementation":"io.demo:domain"},
+    {"id":"Order","kind":"aggregate","name":"Order","responsibility":"订单生命周期","context":"sales","module":"domain"}
+  ],
+  "relations": [{"id":"app-domain","from":"app","to":"domain","kind":"depends_on"}]
+}

@@ -1,0 +1,88 @@
+{
+  "files": {
+    "adapters/archguard-codebase-design/SKILL.md": "3c1ef0ad1de2a71cbcf11a0198905b22952b238aad14cfa5f118c09c8a188c43",
+    "adapters/archguard-domain-modeling/SKILL.md": "1ae1cf51503dec2b6899056966667c8ab26e26c58d0caa165168a06ab00a0ccf",
+    "adapters/archguard-grill-with-docs/SKILL.md": "9037f09eadcc8012ce83fff90b4eff347db3c774cb6aa714b3d902f1a8b02f67",
+    "adapters/archguard-improve-codebase-architecture/SKILL.md": "bf8c88f45d008ce2fc4e7fe976ae2f3dda535cd8acb3fa555cbce5a0b5cf4064",
+    "adapters/archguard-research/SKILL.md": "d8c4e77ead71bff5069748231ed9dcca1f4feacd176dc01a3de12e1a5179da73",
+    "adapters/guard-grilling/SKILL.md": "2ea4dff8163d5793e6e5e3ba8891bcf3a8475ae8aea5a9b4dc89a6e913db18d2",
+    "references/guard-workflow.md": "975bc2c5fb73377dd346c43f4437827e59851e1659df931203b1994c297586be",
+    "sources/LICENSE": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+    "sources/skills/engineering/codebase-design/DEEPENING.md": "f3dd099ce99289bd213914d8ee3e2429b78309c3957ca4583f7659551b1d53c1",
+    "sources/skills/engineering/codebase-design/DESIGN-IT-TWICE.md": "52b52e75655a27aea59c6966b410bac82448968ad46ef1ebb9f07c274e3ae010",
+    "sources/skills/engineering/codebase-design/SKILL.md": "2c20617f87ec8af6a434859f381b2f061a69b530444e74eb39e78bb016a6d1e2",
+    "sources/skills/engineering/codebase-design/agents/openai.yaml": "edebc9e4fcfe102114012575eaa9600b9b5fd08c311664f389c36e7bc717740f",
+    "sources/skills/engineering/domain-modeling/ADR-FORMAT.md": "944c92aa790e8fbdc9199640b170979abb8a34ba8d0fe18c2a01a63bce140ca0",
+    "sources/skills/engineering/domain-modeling/GLOSSARY-FORMAT.md": "21dcc40cdec8e151a829b98ab1517c1867bc444e3665134a98c6983411996801",
+    "sources/skills/engineering/domain-modeling/SKILL.md": "7b925d7b1e341a2eeae33ad68a8a8c0ab889a38ddd22a7598e4c240e5a7556a3",
+    "sources/skills/engineering/domain-modeling/agents/openai.yaml": "f6bf2aa996c6e6f53fdd0708e18a0d16a56aed8322cca59fedbe3c0d2c75f06b",
+    "sources/skills/engineering/grill-with-docs/SKILL.md": "7de372c13488f1ee96cc11cd8907b56b6809cc93eef776eeddd37de6b6cbe3fe",
+    "sources/skills/engineering/grill-with-docs/agents/openai.yaml": "94cd0ab161fb468a836349f5ed482ba58ce8e709a05c57ce533d739dbd35cca9",
+    "sources/skills/engineering/improve-codebase-architecture/HTML-REPORT.md": "581e8bb5a521e46bbda8ca7e19b15948bed882187108092ebb90c62513b77528",
+    "sources/skills/engineering/improve-codebase-architecture/SKILL.md": "552240a5ab5cec6b67c15dd1ad6e9f6962b1bca6ce870059a8c2713760c20392",
+    "sources/skills/engineering/improve-codebase-architecture/agents/openai.yaml": "c8cb20f68ebf0edb4e497bc11ae5fcaa196004e661cd189015b04f4109ced7f1",
+    "sources/skills/engineering/research/SKILL.md": "985569f15739c713d6784887c3d186d4ef9ac85bec5ad9c068d25bf0739928e4",
+    "sources/skills/engineering/research/agents/openai.yaml": "9b4c470d63221c1f68f22df70b83e2f12401b317babe0d1b7b5f24a974474d0d",
+    "sources/skills/productivity/grilling/SKILL.md": "befdff1e27a1dfe2a294d5871169ac1afe16d983911daa4f32627514a48c1e15",
+    "sources/skills/productivity/grilling/agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+  },
+  "schema_version": 1,
+  "skills": {
+    "archguard-codebase-design": {
+      "dependencies": [],
+      "path": "adapters/archguard-codebase-design",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    },
+    "archguard-domain-modeling": {
+      "dependencies": [
+        "guard-grilling"
+      ],
+      "path": "adapters/archguard-domain-modeling",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    },
+    "archguard-grill-with-docs": {
+      "dependencies": [
+        "guard-grilling",
+        "archguard-domain-modeling"
+      ],
+      "path": "adapters/archguard-grill-with-docs",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    },
+    "archguard-improve-codebase-architecture": {
+      "dependencies": [
+        "archguard-codebase-design",
+        "archguard-grill-with-docs",
+        "archguard-research"
+      ],
+      "path": "adapters/archguard-improve-codebase-architecture",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    },
+    "archguard-research": {
+      "dependencies": [],
+      "path": "adapters/archguard-research",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    },
+    "guard-grilling": {
+      "dependencies": [],
+      "path": "adapters/guard-grilling",
+      "references": {
+        "guard-workflow.md": "references/guard-workflow.md"
+      }
+    }
+  },
+  "upstream": {
+    "repository": "https://github.com/mattpocock/skills",
+    "revision": "49dd158d1076134a641b33efb035946536778336",
+    "version": "1.3.1"
+  }
+}

@@ -1,0 +1,20 @@
+apiVersion: guard.partme.ai/v1alpha2
+kind: GuardContract
+metadata:
+  id: layered-java-example
+  revision: "1"
+spec:
+  rules:
+    - id: DOMAIN-NO-INFRA
+      description: Domain must not depend on infrastructure, including indirect paths.
+      enforcement: enforce
+      assertion: {type: forbid_path, subject: "io.demo:domain", predicate: depends_on, object: "io.demo:infra"}
+    - id: APP-DEPENDENCIES
+      enforcement: enforce
+      assertion: {type: allowed_dependencies, subject: "io.demo:app", predicate: depends_on, objects: ["io.demo:domain"]}
+    - id: APP-REQUIRES-DOMAIN
+      enforcement: enforce
+      assertion: {type: require_relation, subject: "io.demo:app", predicate: depends_on, object: "io.demo:domain"}
+    - id: NO-CYCLES
+      enforcement: enforce
+      assertion: {type: acyclic, predicate: depends_on}

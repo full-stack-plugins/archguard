@@ -1,0 +1,3 @@
+# Generated skill hashes are computed over LF-encoded source bytes.
+plugin/skills/** text eol=lf
+plugin/org.partme.guard/** text eol=lf

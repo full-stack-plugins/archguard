@@ -1,0 +1,46 @@
+name: Guard agent installation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  integration:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: archguard
+      - uses: actions/checkout@v4
+        with:
+          repository: full-stack-plugins/guardengine
+          path: guardengine
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build actual CLI
+        # Cross-repository changes must be published together before this checkout can pass.
+        working-directory: archguard
+        run: cargo build --locked 
+      - name: Verify architecture engine and CLI MCP loop
+        working-directory: archguard
+        run: cargo test --locked --all-targets
+      - name: Verify shared graph engine
+        working-directory: guardengine
+        run: cargo test --locked --all-targets
+      - name: Verify locked skill dependency package
+        working-directory: guardengine
+        run: python -B scripts/skill_bundle.py --library skill-library --plugin ../archguard/plugin --check
+      - name: Test skill dependency and conflict handling
+        working-directory: guardengine
+        run: python -B -m unittest discover -s scripts/tests -p test_skill_bundle.py
+      - name: Exercise installation and MCP in isolated fixtures
+        working-directory: archguard
+        run: python -B ../guardengine/scripts/verify_guard_installation.py --bin-dir target/debug --tools archguard
+      - name: Verify portable package and stdio discovery
+        working-directory: archguard
+        run: python -B ../guardengine/scripts/verify_guard_packages.py --repositories-root .. --bin-dir target/debug --tools archguard

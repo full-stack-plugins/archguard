@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "REQ-POINTS",
+  "base_digest": "REPLACE_WITH_CURRENT_BASELINE_DIGEST",
+  "requirement": {"system":"openspec","target":"openspec/changes/points","artifact":"openspec/changes/points/specs/orders/spec.md","requirement":"REQ-POINTS"},
+  "upsert_elements": [{"id":"Points","kind":"entity","name":"Points","responsibility":"管理订单积分状态","context":"sales","module":"domain"}],
+  "remove_elements": [],
+  "upsert_relations": [{"id":"order-points","from":"Order","to":"Points","kind":"uses"}],
+  "remove_relations": [],
+  "touched_modules": ["domain"]
+}
