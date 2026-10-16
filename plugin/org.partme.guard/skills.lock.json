@@ -1,10 +1,10 @@
 {
   "files": {
-    "adapters/archguard-codebase-design/SKILL.md": "3c1ef0ad1de2a71cbcf11a0198905b22952b238aad14cfa5f118c09c8a188c43",
-    "adapters/archguard-domain-modeling/SKILL.md": "1ae1cf51503dec2b6899056966667c8ab26e26c58d0caa165168a06ab00a0ccf",
-    "adapters/archguard-grill-with-docs/SKILL.md": "9037f09eadcc8012ce83fff90b4eff347db3c774cb6aa714b3d902f1a8b02f67",
-    "adapters/archguard-improve-codebase-architecture/SKILL.md": "bf8c88f45d008ce2fc4e7fe976ae2f3dda535cd8acb3fa555cbce5a0b5cf4064",
-    "adapters/archguard-research/SKILL.md": "d8c4e77ead71bff5069748231ed9dcca1f4feacd176dc01a3de12e1a5179da73",
+    "adapters/archguard-codebase-design/SKILL.md": "1f0f97b27464a0ac6da160ae1d5589820fc79b0379ee12d31aa3554760fe695e",
+    "adapters/archguard-domain-modeling/SKILL.md": "dad3a9cccadba7f319d17fd859f57f3101f75b67cbb389ae2b347869e5c18e4b",
+    "adapters/archguard-grill-with-docs/SKILL.md": "e0c2add90eee077124a9e5a453e97b1ee7630c77e90ae94f83a8b547c4609c87",
+    "adapters/archguard-improve-codebase-architecture/SKILL.md": "757c8c03dfd447a6e746b92e90fb5d37c46799625c15d2fa38f67998fcdf6044",
+    "adapters/archguard-research/SKILL.md": "bf2bac4323a40ef27f6db140bfcf14123956781dcbd7b4d5eaba602773552f56",
     "adapters/guard-grilling/SKILL.md": "2ea4dff8163d5793e6e5e3ba8891bcf3a8475ae8aea5a9b4dc89a6e913db18d2",
     "references/guard-workflow.md": "975bc2c5fb73377dd346c43f4437827e59851e1659df931203b1994c297586be",
     "sources/LICENSE": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
