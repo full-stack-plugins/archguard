@@ -17,6 +17,9 @@ fn main() -> ExitCode {
         println!(
             "archguard check|explain|verify --project PATH [--contract FILE] [--analyzer auto|maven|cargo]\ncheck: [--report NEW_FILE] [--facts NEW_FILE]; explain: --rule ID; verify: --report EXISTING_FILE\narchguard contract validate [--project PATH] [--contract FILE]\nDefault contract: .archguard/contract.yaml. Exit: ALLOW=0 BLOCK=2 REQUIRE_APPROVAL=3 error=4.\nAgent integration: install, uninstall, context, instructions render|sync, doctor --integration, serve --mcp. Run install --help."
         );
+        println!(
+            "Bytecode (local_unverified, approval:none): bytecode check|verify --project ABS --scratch ABS --store ABS --config FILE --policy FILE --subject worktree|commit|index --base OID --operation UNIQUE [--commit OID] [--report NEW_FILE] [--previous FILE for verify]."
+        );
         return ExitCode::SUCCESS;
     }
     if args.first().is_some_and(|a| a == "--version") {

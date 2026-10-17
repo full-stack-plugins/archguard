@@ -21,6 +21,8 @@ mod baseline_head;
 mod baseline_lock;
 mod baseline_record;
 mod baseline_store;
+pub mod bytecode_policy;
+mod bytecode_rule;
 mod change_inspection;
 pub mod check_service;
 pub mod domain_cli;
@@ -34,3 +36,24 @@ pub mod model_service;
 mod report_output;
 mod requirement_reference;
 pub mod spec_binding;
+
+pub mod bytecode_artifact_pin;
+pub mod bytecode_config;
+pub mod bytecode_module_input;
+pub mod bytecode_pipeline_request;
+pub mod bytecode_pipeline_result;
+pub mod bytecode_violation;
+
+pub mod bytecode_artifact_ref;
+mod bytecode_paths;
+pub mod bytecode_receipt;
+pub mod bytecode_report;
+pub mod bytecode_run_outcome;
+pub mod bytecode_service;
+
+pub mod bytecode_cli;
+
+pub mod bytecode_projection;
+pub mod bytecode_projection_context;
+pub mod bytecode_public_outcome;
+pub mod bytecode_public_result;

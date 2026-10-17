@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "archguard",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Project baselines and requirement deltas with Java package/layer/domain ownership checks, Maven/Cargo contracts and verified updates",
   "license": "Apache-2.0",
   "keywords": [

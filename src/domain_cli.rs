@@ -8,6 +8,9 @@ use std::{
 /// 执行专业命令，返回 JSON 输出和决策；未知参数拒绝执行。
 pub fn run(args: &[String]) -> Result<(Value, Decision), String> {
     let command = args.first().map(String::as_str).ok_or("command required")?;
+    if command == "bytecode" {
+        return crate::bytecode_cli::run(&args[1..]);
+    }
     if ["model", "change", "baseline"].contains(&command) {
         return crate::model_cli::run(args);
     }

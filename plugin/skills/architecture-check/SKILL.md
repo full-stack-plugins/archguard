@@ -2,12 +2,14 @@
 name: architecture-check
 description: Maintain project architecture and domain model baselines, analyze requirement deltas, check Maven/Cargo dependencies, repair violations and verify evidence before explicit baseline updates.
 license: Apache-2.0
-compatibility: ArchGuard 0.5.0 CLI or MCP; project models, Java syntax policies and Maven/Cargo graph.
+compatibility: ArchGuard 0.6.0 CLI or MCP; bytecode compilation is an explicit CLI-only operation with preconfigured JDK17/Maven tools.
 ---
 
 # ArchGuard
 
 Use this skill when changing module dependencies or validating architecture boundaries.
+
+For explicitly requested compiled Java package constraints, follow [bytecode check and repair verification](references/bytecode.md). Use the configured private-candidate CLI, not the existing read-only MCP checks; never install a compiler, create approval or change the project baseline implicitly.
 
 For Maven projects with a model java policy, follow [Java source checks](references/java-source.md). Read java_analysis.findings for package/layer/domain type ownership evidence; preserve source inventory and policy binding through check/verify/update. Do not claim Java compiler or business semantic validation. Projects without that policy retain build-only coverage.
 

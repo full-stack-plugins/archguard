@@ -1,14 +1,29 @@
 [package]
 name = "archguard"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Architecture dependency analysis for Partme Guard"
 license = "Apache-2.0"
 
+[features]
+bytecode-java-tests = []
+
 [dependencies]
 guard-install = { path = "../guardengine/crates/guard-install" }
 guardengine = { path = "../guardengine" }
+guard-contract = { path = "../guardengine/crates/guard-contract" }
+guard-protocol = { path = "../guardengine/crates/guard-protocol" }
+guard-plan = { path = "../guardengine/crates/guard-plan" }
+guard-run-ledger = { path = "../guardengine/crates/guard-run-ledger" }
+guard-runtime = { path = "../guardengine/crates/guard-runtime" }
+guard-runner = { path = "../guardengine/crates/guard-runner" }
+guard-subject = { path = "../guardengine/crates/guard-subject" }
+guard-store = { path = "../guardengine/crates/guard-store" }
+tokio = { version = "1", features = ["rt", "time", "sync"] }
+chrono = { version = "=0.4.42", default-features = false, features = ["std"] }
+base64 = "0.22"
+flate2 = "1"
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 roxmltree = "0.21.1"

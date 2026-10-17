@@ -3,7 +3,7 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 ArchGuard is the architecture-focused specialist Guard in [Partme Guard](https://github.com/full-stack-plugins).
-Version **0.5.0** adds opt-in Java source package dependencies, layer boundaries and mapped domain type ownership to the unified project model, requirement delta and repair/verification lifecycle. Maven/Cargo checks and existing contract-only projects remain supported. See the [Java source guide](docs/java-source.md), [project model guide](docs/project-model.md) and [portable plugin](plugin/).
+Version **0.6.0** adds explicit private-candidate Maven compilation and ArchUnit package prohibition checks, repair verification and registered public result projection. Existing Java source package/layer/domain ownership, unified project model, requirement deltas and Maven/Cargo checks remain supported. See the [bytecode workflow](docs/bytecode.md), [Java source guide](docs/java-source.md), [project model guide](docs/project-model.md) and [portable plugin](plugin/).
 
 ## Prerequisites
 
@@ -63,7 +63,7 @@ Read [Architecture](docs/architecture.md), [OpenSpec implementation](openspec/ch
 
 ## Architectural governance roadmap
 
-The complete design includes System, Domain, Object and Method guards. Version 0.5.0 implements module dependency constraints, Java syntax package/layer/ownership checks and project baseline delta verification; full compiler and domain/method semantics remain future work. Unsupported effective Maven models block with an explicit diagnostic.
+The complete design includes System, Domain, Object and Method guards. The current implementation covers module dependency constraints, Java syntax package/layer/ownership checks, project baseline delta verification and explicit default-reactor main-Java bytecode prohibition checks. Domain/method behavior, reflection and full effective Maven models remain outside the implemented scope. Unsupported configurations retain explicit diagnostics.
 
 The distinction between deterministic **ENFORCE** checks and human **REVIEW** of architectural trade-offs is part of the architecture contract. Design Diff and the code graph must retain source locations, analyzer coverage, unknown relations and the approved baseline rather than producing a universal quality score.
 

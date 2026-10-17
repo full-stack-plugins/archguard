@@ -771,6 +771,8 @@ fn plugin_manifest_and_injected_rules_describe_real_capabilities() {
     let text = prompt["instructions"].as_str().unwrap();
     assert!(text.contains("DOMAIN-BOUNDARY"));
     assert!(text.contains("archguard_check"));
+    assert!(text.contains("bytecode check"));
+    assert!(text.contains("local_unverified"));
     assert!(text.contains("<!-- ARCHGUARD_START -->"));
     write(root.path(), ".archguard/contract.yaml", "broken: yaml");
     assert_eq!(

@@ -27,3 +27,84 @@ jobs:
       - name: Test
         run: cargo test --all-targets
         working-directory: archguard
+
+  java-bytecode:
+    name: Java bytecode (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: archguard
+    env:
+      CARGO_HOME: ${{ runner.temp }}/archguard-bytecode/cargo
+      CARGO_TARGET_DIR: ${{ runner.temp }}/archguard-bytecode/rust-target
+      RUSTUP_HOME: ${{ runner.temp }}/archguard-bytecode/rustup
+      TEMP: ${{ runner.temp }}/archguard-bytecode/tmp
+      TMP: ${{ runner.temp }}/archguard-bytecode/tmp
+      TMPDIR: ${{ runner.temp }}/archguard-bytecode/tmp
+      JAVA_TOOL_OPTIONS: ''
+      JDK_JAVA_OPTIONS: ''
+      _JAVA_OPTIONS: ''
+      MAVEN_OPTS: ''
+      MAVEN_ARGS: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: archguard
+      - uses: actions/checkout@v4
+        with:
+          repository: full-stack-plugins/guardengine
+          path: guardengine
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create isolated writable state
+        run: |
+          $state = Join-Path $env:RUNNER_TEMP 'archguard-bytecode'
+          foreach ($name in @('tools', 'home', 'repository', 'tmp', 'java-build', 'cargo', 'rustup')) {
+            New-Item -ItemType Directory -Force -Path (Join-Path $state $name) | Out-Null
+          }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Copy explicit JDK and preinstalled Maven into isolated tools
+        run: |
+          $state = Join-Path $env:RUNNER_TEMP 'archguard-bytecode'
+          $mavenCommand = (Get-Command mvn -ErrorAction Stop).Source
+          $mavenHome = python -B -c "from pathlib import Path; import os,sys; c=[os.environ.get('M2_HOME'),os.environ.get('MAVEN_HOME'),str(Path(sys.argv[1]).resolve().parent.parent)]; p=next((Path(v).resolve() for v in c if v and (Path(v)/'bin/m2.conf').is_file() and (Path(v)/'boot').is_dir()),None); assert p is not None, 'preinstalled Maven distribution required'; print(p)" $mavenCommand
+          if ($LASTEXITCODE -ne 0) { throw 'Preinstalled Maven discovery failed' }
+          python -B -c "import shutil,sys; shutil.copytree(sys.argv[1],sys.argv[2],symlinks=False); shutil.copytree(sys.argv[3],sys.argv[4],symlinks=False)" $env:JAVA_HOME (Join-Path $state 'tools/jdk') $mavenHome (Join-Path $state 'tools/maven')
+          if ($LASTEXITCODE -ne 0) { throw 'Explicit tool copy failed' }
+          $settings = '<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"/>'
+          Set-Content -Encoding utf8NoBOM -Path (Join-Path $state 'settings.xml') -Value $settings
+          # Isolate even the raw Maven test helper that does not pass -gs/-s itself.
+          Set-Content -Encoding utf8NoBOM -Path (Join-Path $state 'tools/maven/conf/settings.xml') -Value $settings
+          New-Item -ItemType Directory -Force -Path (Join-Path $state 'home/.m2') | Out-Null
+          Set-Content -Encoding utf8NoBOM -Path (Join-Path $state 'home/.m2/settings.xml') -Value $settings
+      - name: Package adapter and execute actual Java tests (online preparation only)
+        run: |
+          $state = Join-Path $env:RUNNER_TEMP 'archguard-bytecode'
+          $maven = Join-Path $state 'tools/maven'
+          $java = Join-Path $state $(if ($IsWindows) { 'tools/jdk/bin/java.exe' } else { 'tools/jdk/bin/java' })
+          $boot = @(Get-ChildItem -LiteralPath (Join-Path $maven 'boot') -Filter 'plexus-classworlds-*.jar')
+          if ($boot.Count -ne 1) { throw 'Exactly one Maven bootstrap required' }
+          & $java "-Duser.home=$(Join-Path $state 'home')" "-Djava.io.tmpdir=$(Join-Path $state 'tmp')" '-Dfile.encoding=UTF-8' "-Dmaven.home=$maven" "-Dmaven.multiModuleProjectDirectory=$PWD/java-adapter" "-Dclassworlds.conf=$(Join-Path $maven 'bin/m2.conf')" -cp $boot[0].FullName org.codehaus.plexus.classworlds.launcher.Launcher -B -ntp -s (Join-Path $state 'settings.xml') -gs (Join-Path $state 'settings.xml') "-Dmaven.repo.local=$(Join-Path $state 'repository')" "-Darchguard.build.directory=$(Join-Path $state 'java-build')" -f java-adapter/pom.xml package
+          if ($LASTEXITCODE -ne 0) { throw 'Actual Java package/tests failed' }
+      - name: Verify immutable dependencies and prepare exact native test configuration
+        run: |
+          $state = Join-Path $env:RUNNER_TEMP 'archguard-bytecode'
+          python -B java-adapter/scripts/dependency_lock.py --repository (Join-Path $state 'repository') --check
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency lock verification failed' }
+          $config = Join-Path $state 'bytecode-test-config.json'
+          python -B java-adapter/scripts/prepare_test_config.py --java-home (Join-Path $state 'tools/jdk') --maven-home (Join-Path $state 'tools/maven') --repository (Join-Path $state 'repository') --adapter-jar (Join-Path $state 'java-build/archguard-bytecode-0.1.0-SNAPSHOT.jar') --home (Join-Path $state 'home') --temporary-directory (Join-Path $state 'tmp') --test-reports (Join-Path $state 'java-build/surefire-reports') --output $config
+          if ($LASTEXITCODE -ne 0) { throw 'Exact native configuration preparation failed' }
+          "ARCHGUARD_BYTECODE_TEST_CONFIG=$config" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Execute real Rust-to-Java product and registered-runtime E2E serially
+        run: cargo test --locked --features bytecode-java-tests --test bytecode_java -- --test-threads=1

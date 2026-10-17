@@ -2,7 +2,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-ArchGuard 是 Partme Guard 的专业**架构守卫**。当前 0.5.0 在统一项目基线中增加可选 Java 源码包依赖、分层边界和领域类型实际归属检查，复用需求增量、影响分析、修复复验及显式基线更新；保留 Maven/Cargo 构建检查。详见 [Java 源码指南](docs/java-source.md)、[项目模型指南](docs/project-model.md) 和 [插件包](plugin/)。
+ArchGuard 是 Partme Guard 的专业**架构守卫**。当前 0.6.0 新增显式私有候选 Maven 编译、ArchUnit 包禁止依赖检查、修复复验及已注册计划的公共结果投影；保留 Java 源码包依赖、分层边界、领域类型归属、统一项目基线与需求增量，以及 Maven/Cargo 检查。详见 [字节码闭环](docs/bytecode.md)、[Java 源码指南](docs/java-source.md)、[项目模型指南](docs/project-model.md) 和 [插件包](plugin/)。
 
 ## 工程准备
 

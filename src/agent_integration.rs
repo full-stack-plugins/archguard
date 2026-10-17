@@ -58,7 +58,7 @@ pub(crate) fn tool() -> Tool {
     let mut tool = Tool::new(
         "archguard",
         env!("CARGO_PKG_VERSION"),
-        "修改模块依赖和领域边界前读取 .archguard/contract.yaml、已有 spec-binding.json 和 context 中的 domain.model；用 spec context 选择唯一原生规格。已有项目基线时先 model show；每个需求在 .archguard/changes/<id>.json 维护引用当前基线及原生规格的增量，用 change impact 分析影响，change check 检查整个项目，修复后重新 check 并 change verify --report。仅在明确授权后通过 CLI baseline update --apply 更新已复验且 ALLOW 的基线；MCP 只读。未配置基线时保留 contract validate、check、explain、verify 流程。插件已加载时可用 archguard-domain-modeling、archguard-grill-with-docs、archguard-codebase-design、archguard-improve-codebase-architecture、archguard-research；缺少插件时不假定技能已安装。支持 Maven/Cargo 声明依赖图、显式 Maven profile 和声明领域模型结构；模型配置 java 后检查源码包依赖、分层与 java_type 实际归属，按 java_analysis.findings 修复，不覆盖 Java 方法调用、领域实现语义或完整有效模型。缺失模块、未知谓词和不完整模型不能作为通过；不得自行放宽契约或批准 REVIEW。",
+        "修改模块依赖和领域边界前读取 .archguard/contract.yaml、已有 spec-binding.json 和 context 中的 domain.model；用 spec context 选择唯一原生规格。已有项目基线时先 model show；每个需求在 .archguard/changes/<id>.json 维护引用当前基线及原生规格的增量，用 change impact 分析影响，change check 检查整个项目，修复后重新 check 并 change verify --report。仅在明确授权后通过 CLI baseline update --apply 更新已复验且 ALLOW 的基线；MCP 只读。未配置基线时保留 contract validate、check、explain、verify 流程。插件已加载时可用 archguard-domain-modeling、archguard-grill-with-docs、archguard-codebase-design、archguard-improve-codebase-architecture、archguard-research；缺少插件时不假定技能已安装。支持 Maven/Cargo 声明依赖图、显式 Maven profile 和声明领域模型结构；模型配置 java 后检查源码包依赖、分层与 java_type 实际归属，按 java_analysis.findings 修复，不覆盖 Java 方法调用、领域实现语义或完整有效模型。缺失模块、未知谓词和不完整模型不能作为通过；不得自行放宽契约或批准 REVIEW。明确要求编译后的包禁止依赖检查时使用独立 CLI bytecode check，再修复并 bytecode verify；须提供已核对的 JDK17、Maven、ArchUnit及源码范围配置，执行只发生在私有候选副本。此入口不在现有只读 MCP 工具集中；结果始终 local_unverified，不代替批准、领域不变量或自动发布项目基线。",
         &[
             "contract validate",
             "check",
@@ -69,6 +69,8 @@ pub(crate) fn tool() -> Tool {
             "change impact",
             "change check",
             "change verify",
+            "bytecode check",
+            "bytecode verify",
             "baseline init",
             "baseline update",
         ],

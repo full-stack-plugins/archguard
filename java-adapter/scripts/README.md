@@ -1,0 +1,15 @@
+# Explicit CI test configuration
+
+`prepare_test_config.py` generates the local fixture configuration consumed by the two real Rust-to-Java tests in `tests/bytecode_java.rs`. It runs no subprocess, performs no download or installation, changes no tool/cache file, and exclusively creates the requested output (existing outputs are rejected).
+
+```text
+python -B java-adapter/scripts/prepare_test_config.py --java-home ABS_JDK17 --maven-home ABS_MAVEN --repository ABS_PREPARED_REPOSITORY --adapter-jar ABS_ADAPTER_JAR --home ABS_EXISTING_HOME --temporary-directory ABS_EXISTING_TEMP --output ABS_NEW_JSON
+```
+
+All directories/files must already exist and be absolute, ordinary paths without symlinks/reparse ancestors. The helper checks the existing fourteen dependency-lock JAR/POM bytes; it never rewrites the lock. The classpath includes the actual helper plus the five runtime JARs declared in `dependency_lock.py`. Pins additionally cover the Java executable, release/modules/JVM runtime files, every Maven distribution file and **every** JAR/POM currently in the dedicated offline repository. It caps traversal, files and generated configuration according to the adapter's limits. It deliberately does not pin only the fourteen direct dependencies: offline compiler/plugin dependencies are part of the actual execution inputs too.
+
+The fixture module/type set is fixed to root + `infra/demo.infra.SqlStore` + `domain/demo.domain.Order`. Identity strings are explicit local fixture declarations, never production authority. The environment fixes `GIT_CEILING_DIRECTORIES={{subject_parent}}`, TMP/TEMP/TMPDIR and, on Windows, the existing SystemRoot. No inherited PATH, Git routing, JVM options or Maven options are copied into the runtime profile. Optional `--test-reports ABS_SUREFIRE_REPORTS` requires at least nineteen actual Java tests with zero skipped, failed or errored tests; the CI job uses it after `mvn package`.
+
+The independent `java-bytecode` CI job preserves the old Rust job and runs on Ubuntu and Windows with JDK 17 and the runner's preinstalled Maven. It explicitly copies the selected JDK and preinstalled Maven into RUNNER_TEMP, dereferencing distribution packaging links into ordinary copied files **before** observation/pinning. A missing Maven distribution fails; the workflow never installs Maven. The tool copy's global settings and private user settings are empty; the initial package invocation also passes explicit empty `-s` and `-gs`. Java/Cargo build outputs, caches, user home and temporary directories all use RUNNER_TEMP. Only this separate preparation step resolves Maven artifacts online. The product adapter and its nested Maven execution remain offline with private empty settings.
+
+After actual Java packaging/tests and dependency-lock verification, the job prepares the profile and runs the real `bytecode-java-tests` integration binary with `--test-threads=1`. It does not substitute mocked reports, infer Linux success from Windows, or grant trust from a zero exit. Full CI execution must be observed after publication; a locally generated configuration alone is preparation evidence.

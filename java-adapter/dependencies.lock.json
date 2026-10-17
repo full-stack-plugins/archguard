@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "artifacts": {
+    "com/tngtech/archunit/archunit/1.5.1/archunit-1.5.1.jar": "sha256:a4dbfc51c90005ad6ac9967672a7efb43aa6928287a57238b28e60e0a75c5c6f",
+    "com/tngtech/archunit/archunit/1.5.1/archunit-1.5.1.pom": "sha256:9cb67cd704b6cb3be76ffa7fe2a028f3b676fa9cb489de61aa91d324f3af6933",
+    "org/slf4j/slf4j-api/2.0.19/slf4j-api-2.0.19.jar": "sha256:e91ff6d720609e7a194ffe758c3ed5c84e798617ae07b0a0f6a4fe229741b4bb",
+    "org/slf4j/slf4j-api/2.0.19/slf4j-api-2.0.19.pom": "sha256:b04a4843eaa29966807cc9508a9f2513fa563d0d0794cb0edd6a8d2c8f4620d0",
+    "com/fasterxml/jackson/core/jackson-databind/2.20.1/jackson-databind-2.20.1.jar": "sha256:34bbeb4526fff4f8565b12106bf85a6afcbae858966d489b54214ac46b2e26e8",
+    "com/fasterxml/jackson/core/jackson-databind/2.20.1/jackson-databind-2.20.1.pom": "sha256:bcfdf278253232b683ab51de2dcbc8f98f20f47738c111ecfd2c85c41b131cec",
+    "com/fasterxml/jackson/core/jackson-core/2.20.1/jackson-core-2.20.1.jar": "sha256:ffab4d957daa2796cf24cb66d0b78a7090f1bcbe17c3a4578f09affaaf137089",
+    "com/fasterxml/jackson/core/jackson-core/2.20.1/jackson-core-2.20.1.pom": "sha256:16e049ab248f82aa6cb048f04d52ef3ee1f54c80da1d263af24fbe50cf6e797e",
+    "com/fasterxml/jackson/core/jackson-annotations/2.20/jackson-annotations-2.20.jar": "sha256:959a2ffb2d591436f51f183c6a521fc89347912f711bf0cae008cdf045d95319",
+    "com/fasterxml/jackson/core/jackson-annotations/2.20/jackson-annotations-2.20.pom": "sha256:4d740c4478dd08d089ecdc6d063228a55a11a7e8e497da4338f872f8115794a4",
+    "junit/junit/4.13.2/junit-4.13.2.jar": "sha256:8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3",
+    "junit/junit/4.13.2/junit-4.13.2.pom": "sha256:569b6977ee4603c965c1c46c3058fa6e969291b0160eb6964dd092cd89eadd94",
+    "org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar": "sha256:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9",
+    "org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.pom": "sha256:fde386a7905173a1b103de6ab820727584b50d0e32282e2797787c20a64ffa93"
+  }
+}
