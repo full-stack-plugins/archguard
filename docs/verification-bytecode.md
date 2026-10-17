@@ -30,7 +30,7 @@
 - root在最终0.6.0源码及上述新JAR/pin配置上独立执行两个真实端到端用例，2/2通过，325.13秒，无失败或跳过；没有沿用旧JAR摘要。
 - CI配置准备器读取现有明确工具及缓存，实际生成275个 pin，与原本地配置逐项一致并重新核验；拒绝相对工具路径或覆盖已有配置。它不安装或联网、不构成运行验收。
 
-当前已新增 Ubuntu/Windows 独立 Java CI 作业，执行真实 Java tests/package、14依赖锁、19测试零skip门禁及两个真实 Rust E2E。发布后必须检查具体运行，不把本地结果推广为 Linux 已通过。现阶段 EG-A01 仍待该提交 CI 与最终审查，不提前勾选。
+初次发布时仍待 Ubuntu/Windows 独立 Java CI，未据本地结果提前勾选。现已实际核验代码提交86f0c2a及工作流修复2a237fc：[CI38987740407](https://github.com/full-stack-plugins/archguard/actions/runs/38987740407)三job全部成功，其中Ubuntu/Windows各真实执行Java19测试、14依赖锁和两个Rust E2E；[安装38987740448](https://github.com/full-stack-plugins/archguard/actions/runs/38987740448)双平台也全部成功。Windows E2E实际2/2通过，140.25秒，无跳过。首次86f0c2a工作流因job.env不能使用runner上下文而启动失败，移至实际步骤后恢复，历史失败不改写。EG-A01已按其最小批准规则/独立入口的原任务范围验收，见GuardEngine docs/delivery/EG-A01-evidence.md；不关闭后续领域/方法/授权/发布路线。
 
 ## 保留边界
 

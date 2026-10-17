@@ -1,6 +1,6 @@
-# Java 字节码架构检查（EG-A01，实施中）
+# Java 字节码架构检查（EG-A01）
 
-规格事实源仍为现有 `add-engineering-guard-core` 的 EG-A01 / EG-ARCH-001。本页说明实现边界，不新增批准或替代规格。当前尚未验收，不表示完整产品能力已经完成。
+规格事实源仍为现有 `add-engineering-guard-core` 的 EG-A01 / EG-ARCH-001。本页说明实现边界，不新增批准或替代规格。EG-A01 的最小独立产品闭环已取得本地独立复验与 Ubuntu/Windows CI 证据，不表示完整领域/方法或生产发布路线已经完成。
 
 旧 check/explain/verify、项目模型、需求增量、Cargo 和 Maven 静态检查保持原语义。新能力显式使用 bytecode check|verify，执行编译而非静默改变旧命令副作用。
 
@@ -29,7 +29,7 @@ flowchart LR
     I -->|是| K[只获得本域技术结论]
 ```
 
-Java adapter 已真实通过 19 项测试，Rust 产品入口、契约投影、公共 runtime 接线及修复复验已有本地真实验证，详见 [本批验证记录](verification-bytecode.md) 和 [适配器边界与协议](../java-adapter/README.md)。当前版本为 0.6.0 候选；Ubuntu/Windows 新 CI 仍须按本次提交实际运行后验收，单项测试不代表完整路线完成。独立运行的技术配置不能自行生成 CompiledContract 或受信批准。
+Java adapter 已真实通过 19 项测试，Rust 产品入口、契约投影、公共 runtime 接线及修复复验已有本地独立和 Ubuntu/Windows CI 验证，详见 [本批验证记录](verification-bytecode.md) 和 [适配器边界与协议](../java-adapter/README.md)。当前版本为 0.6.0 候选；本任务验收不代表完整路线、签名发布或真实宿主集成完成。独立运行的技术配置不能自行生成 CompiledContract 或受信批准。
 
 插件的 architecture-check 技能及安装时注入的提示已经说明 bytecode check/verify 的使用条件。现有 MCP 操作保持只读；新字节码入口通过显式 CLI 编译，或通过库的 check_registered_result 组合已批准契约及冻结计划。普通模型检查不会隐式启动 Maven，也不会自动把字节码结果写成新的项目基线。
 
