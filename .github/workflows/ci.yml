@@ -41,12 +41,6 @@ jobs:
         shell: pwsh
         working-directory: archguard
     env:
-      CARGO_HOME: ${{ runner.temp }}/archguard-bytecode/cargo
-      CARGO_TARGET_DIR: ${{ runner.temp }}/archguard-bytecode/rust-target
-      RUSTUP_HOME: ${{ runner.temp }}/archguard-bytecode/rustup
-      TEMP: ${{ runner.temp }}/archguard-bytecode/tmp
-      TMP: ${{ runner.temp }}/archguard-bytecode/tmp
-      TMPDIR: ${{ runner.temp }}/archguard-bytecode/tmp
       JAVA_TOOL_OPTIONS: ''
       JDK_JAVA_OPTIONS: ''
       _JAVA_OPTIONS: ''
@@ -68,6 +62,11 @@ jobs:
           $state = Join-Path $env:RUNNER_TEMP 'archguard-bytecode'
           foreach ($name in @('tools', 'home', 'repository', 'tmp', 'java-build', 'cargo', 'rustup')) {
             New-Item -ItemType Directory -Force -Path (Join-Path $state $name) | Out-Null
+          }
+          # runner context is unavailable in jobs.<id>.env; publish existing paths at step runtime.
+          $paths = @{ CARGO_HOME = 'cargo'; CARGO_TARGET_DIR = 'rust-target'; RUSTUP_HOME = 'rustup'; TEMP = 'tmp'; TMP = 'tmp'; TMPDIR = 'tmp' }
+          foreach ($key in $paths.Keys) {
+            "$key=$(Join-Path $state $paths[$key])" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           }
       - uses: actions/setup-java@v4
         with:
